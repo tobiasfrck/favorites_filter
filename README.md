@@ -14,6 +14,7 @@ Chrome version is not available yet but it can be easily ported to Chrome and I 
 - Filter by availability
 - Filter by search term
 - Sort by price
+- Display more/less items per row with Numpad +/-
 
 ## Future features
 
