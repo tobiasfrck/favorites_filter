@@ -4,6 +4,7 @@ if (typeof state !== "undefined") {
 var state = typeof state === "undefined" ? "off" : state;
 
 let globalFilters = [];
+let itemCount = 0;
 
 // listen for messages from background.js
 browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -15,12 +16,16 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
+var itemUpdateInterval = setInterval(function() {
+  updateInternalItemCounter();
+}, 500);
+
 function pluginButton() {
   if (
     document.URL.includes("catalog") ||
-    document.URL === "https://www.vinted.de/"
+    !document.URL.includes("vinted")
   ) {
-    console.log("Not sorting on catalog page and main page");
+    console.log("Not sorting on catalog page or non vinted page.");
     return;
   }
 
@@ -79,6 +84,14 @@ var observeDOM = (function () {
   };
 })();
 
+function updateInternalItemCounter() {
+  if(getItems().length !== itemCount) {
+    itemCount = getItems().length;
+    websiteChange();
+    updateItemCounter();
+  }
+}
+
 document.addEventListener("readystatechange", function (event) {
   if (document.URL.includes("vinted") && document.readyState === "complete") {
     Retry(websiteChange, 500, 5)
@@ -108,10 +121,11 @@ document.addEventListener("readystatechange", function (event) {
   }
 });
 
-if (isFavoriteSite()) {
+if (isFavoriteSite() || isMemberSite()) {
   addSpecialElementContainer();
   addSearchBar();
   addFilterContainer();
+  websiteChange();
 }
 
 document.addEventListener("keydown", function (event) {
@@ -282,6 +296,10 @@ function isFavoriteSite() {
   return (
     document.URL.includes("vinted") && document.URL.includes("favourite_list")
   );
+}
+
+function isMemberSite() {
+  return document.URL.includes("vinted") && document.URL.includes("member");
 }
 
 // This function should add checkboxes for each size to the end of the searchContainer
@@ -704,8 +722,14 @@ function clearSearch() {
 }
 
 function searchForTerm() {
-  globalFilters = globalFilters.filter((f) => f.name !== "search"); // remove search filter
   let searchTerm = document.getElementById("searchField").value;
+
+  if (searchTerm === "") {
+    clearSearch();
+    return;
+  }
+
+  globalFilters = globalFilters.filter((f) => f.name !== "search"); // remove search filter
   console.log("Searching for: " + searchTerm);
 
   globalFilters.push({
@@ -713,9 +737,7 @@ function searchForTerm() {
     conditionType: "exclusive",
     searchTerm: searchTerm,
     condition: (item) =>
-      getTitleOfItem(item)
-        .title.toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
+      doesItemTitleContainSimilarSearchTerm(item, searchTerm.toLowerCase())||
       getDescriptionOfItem(item)
         .innerText.toLowerCase()
         .includes(searchTerm.toLowerCase()),
@@ -757,6 +779,20 @@ function makeSizeOfItemsEqual() {
 function hasItemClothingSize(item, size) {
   let description = getDescriptionOfItem(item);
   return description.innerText === size;
+}
+
+function doesItemTitleContainSimilarSearchTerm(item, searchTerm) {
+  const maxDistance = 1;
+
+  let splitTitle = getTitleOfItem(item).title.toLowerCase().split(" ");
+
+  for (let i = 0; i < splitTitle.length; i++) {
+    if (damerauLevenshteinDistance(splitTitle[i], searchTerm) <= maxDistance) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function doNothing(element) {
@@ -897,6 +933,8 @@ function websiteChange() {
   addSizeFilters();
   addStatusFilters();
   addSortByPriceButton();
+  console.log("Website changed");
+  applyFilters(getItems(), globalFilters, hideItem);
 }
 
 function sortByPrice(sortOrder) {
@@ -937,4 +975,38 @@ function sortByPrice(sortOrder) {
   console.log(itemcontainer[0].childNodes.length + " items found");
 
   console.log("Sorting done");
+}
+
+// Calculate the Damerau-Levenshtein distance between two strings
+function damerauLevenshteinDistance(a, b) {
+  const m = a.length;
+  const n = b.length;
+  const d = [];
+
+  // Initialize the first row and column
+  for (let i = 0; i <= m; i++) {
+    d[i] = [i];
+  }
+  for (let j = 0; j <= n; j++) {
+    d[0][j] = j;
+  }
+
+  // Calculate the edit distance
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      d[i][j] = Math.min(
+        d[i - 1][j] + 1,        // Deletion
+        d[i][j - 1] + 1,        // Insertion
+        d[i - 1][j - 1] + cost  // Substitution
+      );
+
+      // Check for transposition
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+        d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + cost);
+      }
+    }
+  }
+
+  return d[m][n];
 }
