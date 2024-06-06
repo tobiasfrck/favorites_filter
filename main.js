@@ -16,15 +16,12 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-var itemUpdateInterval = setInterval(function() {
+var itemUpdateInterval = setInterval(function () {
   updateInternalItemCounter();
 }, 500);
 
 function pluginButton() {
-  if (
-    document.URL.includes("catalog") ||
-    !document.URL.includes("vinted")
-  ) {
+  if (document.URL.includes("catalog") || !document.URL.includes("vinted")) {
     console.log("Not sorting on catalog page or non vinted page.");
     return;
   }
@@ -85,7 +82,7 @@ var observeDOM = (function () {
 })();
 
 function updateInternalItemCounter() {
-  if(getItems().length !== itemCount) {
+  if (getItems().length !== itemCount) {
     itemCount = getItems().length;
     websiteChange();
     updateItemCounter();
@@ -655,11 +652,9 @@ function updateItemCounter() {
 }
 
 function getDescriptionOfItem(item) {
-  return item
-    .getElementsByClassName("new-item-box__description")[0]
-    .getElementsByClassName(
-      "web_ui__Text__text web_ui__Text__caption web_ui__Text__left"
-    )[0];
+  return item.querySelector(
+    ".u-flexbox+ .new-item-box__description .web_ui__Text__left"
+  );
 }
 
 function getTitleOfItem(item) {
@@ -669,9 +664,7 @@ function getTitleOfItem(item) {
 }
 
 function getPriceOfItem(item) {
-  let priceText = item.getElementsByClassName(
-    "web_ui__Text__text web_ui__Text__subtitle web_ui__Text__left web_ui__Text__amplified web_ui__Text__bold"
-  )[0].innerText;
+  let priceText = item.querySelector(".web_ui__Text__muted").innerText;
   return parseFloat(priceText.replace(/[^0-9.,]/g, "").replace(",", ".")); // remove all non-numeric characters and replace comma with dot
 }
 
@@ -737,7 +730,7 @@ function searchForTerm() {
     conditionType: "exclusive",
     searchTerm: searchTerm,
     condition: (item) =>
-      doesItemTitleContainSimilarSearchTerm(item, searchTerm.toLowerCase())||
+      doesItemTitleContainSimilarSearchTerm(item, searchTerm.toLowerCase()) ||
       getDescriptionOfItem(item)
         .innerText.toLowerCase()
         .includes(searchTerm.toLowerCase()),
@@ -943,10 +936,7 @@ function sortByPrice(sortOrder) {
 
   let prices = [];
   for (let i = 0; i < items.length; i++) {
-    let price = items[i].getElementsByClassName(
-      "web_ui__Text__text web_ui__Text__subtitle web_ui__Text__left web_ui__Text__amplified web_ui__Text__bold"
-    )[0].innerText;
-    price = parseFloat(price.replace(/[^0-9.,]/g, "").replace(",", "."));
+    let price = getPriceOfItem(items[i])
     prices.push(price);
   }
 
@@ -961,10 +951,7 @@ function sortByPrice(sortOrder) {
 
   for (let i = 0; i < sortedPrices.length; i++) {
     for (let j = 0; j < items.length; j++) {
-      let price = items[j].getElementsByClassName(
-        "web_ui__Text__text web_ui__Text__subtitle web_ui__Text__left web_ui__Text__amplified web_ui__Text__bold"
-      )[0].innerText;
-      price = parseFloat(price.replace(/[^0-9.,]/g, "").replace(",", "."));
+      let price = getPriceOfItem(items[j]);
       if (price === sortedPrices[i]) {
         itemcontainer[0].appendChild(items[j]);
         break;
@@ -996,9 +983,9 @@ function damerauLevenshteinDistance(a, b) {
     for (let j = 1; j <= n; j++) {
       const cost = a[i - 1] === b[j - 1] ? 0 : 1;
       d[i][j] = Math.min(
-        d[i - 1][j] + 1,        // Deletion
-        d[i][j - 1] + 1,        // Insertion
-        d[i - 1][j - 1] + cost  // Substitution
+        d[i - 1][j] + 1, // Deletion
+        d[i][j - 1] + 1, // Insertion
+        d[i - 1][j - 1] + cost // Substitution
       );
 
       // Check for transposition
