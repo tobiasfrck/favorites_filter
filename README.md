@@ -27,5 +27,3 @@ Chrome version is not available yet but it can be easily ported to Chrome and I 
 ## Install
 
 [Add it to Firefox](https://addons.mozilla.org/de/firefox/addon/filter-favorites-on-vinted/)
-
-NOTE: This addon may still be under review and not yet published when you click on the link.
