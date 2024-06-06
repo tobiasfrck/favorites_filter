@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Fav-Filter for Vinted",
   "description": "Filter favorite items on Vinted.",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "icons": {
     "16": "images/icon-16.png",
     "32": "images/icon-32.png",
@@ -15,7 +15,6 @@
       "id": "vintedfavfilteraddonpublic@tobiasfrck"
     }
   },
-  
 
   "action": {
     "default_icon": {
@@ -28,7 +27,30 @@
 
   "content_scripts": [
     {
-      "matches": ["*://*.vinted.de/*","*://*.vinted.fr/*","*://*.vinted.com/*"],
+      "matches": [
+        "*://*.vinted.com/*",
+        "*://*.vinted.de/*",
+        "*://*.vinted.fr/*",
+        "*://*.vinted.it/*",
+        "*://*.vinted.es/*",
+        "*://*.vinted.lt/*",
+        "*://*.vinted.nl/*",
+        "*://*.vinted.pl/*",
+        "*://*.vinted.pt/*",
+        "*://*.vinted.cz/*",
+        "*://*.vinted.sk/*",
+        "*://*.vinted.ro/*",
+        "*://*.vinted.hu/*",
+        "*://*.vinted.gr/*",
+        "*://*.vinted.fi/*",
+        "*://*.vinted.se/*",
+        "*://*.vinted.dk/*",
+        "*://*.vinted.co.uk/*",
+        "*://*.vinted.be/*",
+        "*://*.vinted.lu/*",
+        "*://*.vinted.at/*",
+        "*://*.vinted.hr/*"
+      ],
       "js": ["main.js"],
       "run_at": "document_end",
       "css": []
@@ -36,8 +58,30 @@
   ],
 
   "permissions": [],
-  "host_permissions": ["*://*.vinted.de/*","*://*.vinted.fr/*","*://*.vinted.com/*"],
-
+  "host_permissions": [
+    "*://*.vinted.com/*",
+    "*://*.vinted.de/*",
+    "*://*.vinted.fr/*",
+    "*://*.vinted.it/*",
+    "*://*.vinted.es/*",
+    "*://*.vinted.lt/*",
+    "*://*.vinted.nl/*",
+    "*://*.vinted.pl/*",
+    "*://*.vinted.pt/*",
+    "*://*.vinted.cz/*",
+    "*://*.vinted.sk/*",
+    "*://*.vinted.ro/*",
+    "*://*.vinted.hu/*",
+    "*://*.vinted.gr/*",
+    "*://*.vinted.fi/*",
+    "*://*.vinted.se/*",
+    "*://*.vinted.dk/*",
+    "*://*.vinted.co.uk/*",
+    "*://*.vinted.be/*",
+    "*://*.vinted.lu/*",
+    "*://*.vinted.at/*",
+    "*://*.vinted.hr/*"
+  ],
 
   "background": {
     "scripts": ["background.js"]
