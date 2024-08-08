@@ -653,7 +653,7 @@ function updateItemCounter() {
 
 function getDescriptionOfItem(item) {
   return item.querySelector(
-    ".u-flexbox+ .new-item-box__description .web_ui__Text__left"
+    ".new-item-box__description+ .new-item-box__description .web_ui__Text__left"
   );
 }
 
