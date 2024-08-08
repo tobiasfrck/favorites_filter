@@ -536,6 +536,79 @@ function getAllPossibleSizes() {
   return sizes;
 }
 
+function addPriceRangeInputs() {
+  let filterCont = document.getElementById("filterContainer");
+
+  let priceInputsCont = document.getElementById("priceInputContainer");
+  if (priceInputsCont !== null) {
+    if (priceInputsCont.nextSibling !== null) {
+      priceInputsCont.remove();
+    }
+
+    filterCont.appendChild(priceInputsCont);
+    return;
+  }
+
+  priceInputsCont = document.createElement("div");
+  priceInputsCont.setAttribute("id", "priceInputContainer");
+
+  let lowerPriceInput = document.createElement("input");
+  let upperPriceInput = document.createElement("input");
+
+  lowerPriceInput.style.width = upperPriceInput.style.width = "4em";
+  lowerPriceInput.type = upperPriceInput.type = "number";
+
+  lowerPriceInput.value = upperPriceInput.value = 0;
+
+  [lowerPriceInput, upperPriceInput].forEach((element) => {
+    element.addEventListener("change", function () {
+
+      lower = lowerPriceInput.value;
+      upper = upperPriceInput.value;
+
+      if (lower > upper && upper != 0) {
+        let temp = upper;
+        upper = lower;
+        lower = temp;
+      }
+
+      let filter = null;
+
+      if (upper == 0) {
+        filter = {
+          name: "priceFilter",
+          conditionType: "exclusive",
+          condition: (item) => getPriceOfItem(item) >= lower,
+          action: showItem,
+        };
+      } else {
+        filter = {
+          name: "priceFilter",
+          conditionType: "exclusive",
+          condition: (item) =>
+            getPriceOfItem(item) >= lower && getPriceOfItem(item) <= upper,
+          action: showItem,
+        };
+      }
+
+      if(globalFilters.includes(filter)) {
+        console.log("Skipped replacing filter.") //FIXME: This does not work.
+        return;
+      }
+
+      globalFilters = globalFilters.filter((f) => f.name !== "priceFilter");
+      globalFilters.push(filter)
+
+      applyFilters(getItems(), globalFilters, hideItem);
+      updateItemCounter();
+    });
+  });
+
+  priceInputsCont.appendChild(lowerPriceInput);
+  priceInputsCont.appendChild(upperPriceInput);
+  filterCont.appendChild(priceInputsCont);
+}
+
 function addSpecialElementContainer() {
   let itemcontainer = document.querySelectorAll(".l-header,.js-header")[0];
   let specialContainer = document.createElement("div");
@@ -926,7 +999,9 @@ function websiteChange() {
   addSizeFilters();
   addStatusFilters();
   addSortByPriceButton();
+  addPriceRangeInputs();
   console.log("Website changed");
+  if(itemCount)
   applyFilters(getItems(), globalFilters, hideItem);
 }
 
@@ -936,7 +1011,7 @@ function sortByPrice(sortOrder) {
 
   let prices = [];
   for (let i = 0; i < items.length; i++) {
-    let price = getPriceOfItem(items[i])
+    let price = getPriceOfItem(items[i]);
     prices.push(price);
   }
 
