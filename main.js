@@ -670,12 +670,12 @@ function getPriceOfItem(item) {
 
 function isItemSoldOrReserved(item) {
   return (
-    item.innerText.includes("Verkauft") || item.innerText.includes("Reserviert")
+    isItemSold(item) || isItemReserved(item) 
   );
 }
 
 function isItemReserved(item) {
-  return item.innerText.includes("Reserviert");
+  return item.querySelector('.web_ui__Cell__amplified') !== null || item.innerText.includes("Reserviert");
 }
 
 // function getHeartElementOfItem(item) { // Heart is identified by the path tag
@@ -687,7 +687,7 @@ function isItemReserved(item) {
 // }
 
 function isItemSold(item) {
-  return item.innerText.includes("Verkauft");
+  return item.querySelector('.web_ui__Cell__success') !== null || item.innerText.includes("Verkauft");
 }
 
 function hideItem(item) {
