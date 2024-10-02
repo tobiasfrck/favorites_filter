@@ -7,7 +7,7 @@ let globalFilters = [];
 let itemCount = 0;
 
 // listen for messages from background.js
-browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.message === "actionButtonClicked") {
     console.log("action button clicked!");
     document.URL.includes("vinted")
@@ -176,7 +176,7 @@ document.addEventListener("keydown", function (event) {
       //   heart.style.fill = "red";
       // }
     }
-    browser.storage.local.set({ items: itemData }, function () {
+    chrome.storage.local.set({ items: itemData }, function () {
       console.log(itemData.length + " Items saved. Identifier: data-testid.");
     });
   }
@@ -185,7 +185,7 @@ document.addEventListener("keydown", function (event) {
   if (event.code === "KeyK") {
     console.log("Saving new items.");
     let items = getItems();
-    browser.storage.local.get(["items"], function (result) {
+    chrome.storage.local.get(["items"], function (result) {
       let itemData = result.items;
 
       let soldItemCounter = 0;
@@ -221,7 +221,7 @@ document.addEventListener("keydown", function (event) {
           // }
         }
       }
-      browser.storage.local.set({ items: itemData }, function () {
+      chrome.storage.local.set({ items: itemData }, function () {
         console.log(
           itemData.length +
             " Items in storage. " +
@@ -237,7 +237,7 @@ document.addEventListener("keydown", function (event) {
   // load item elements from chrome persistent storage.local and append them to the itemcontainer, then check for duplicates and remove them
   if (event.code === "Period") {
     let itemcontainer = document.getElementsByClassName("feed-grid");
-    browser.storage.local.get(["items"], function (result) {
+    chrome.storage.local.get(["items"], function (result) {
       let itemData = result.items;
       let items = itemcontainer[0].getElementsByClassName("feed-grid__item");
       let itemTxts = [];

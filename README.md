@@ -1,12 +1,10 @@
 # favorites_filter
 
-You can easily filter your favorites on Vinted by size, availability and search term and sort by price with this firefox addon.
+You can easily filter your favorites on Vinted by size, availability and search term and sort by price with this firefox addon. This is the chrome version that is working but not published yet.
 
 ## Requirements
 
-- Firefox
-
-Chrome version is not available yet but it can be easily ported to Chrome and I will do that probably.
+- Firefox or Chrome
 
 ## Features
 
