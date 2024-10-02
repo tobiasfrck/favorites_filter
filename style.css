@@ -1,51 +1,137 @@
 #statusContainer > input[type="checkbox"] {
-    margin-left: 10px;
+  margin-left: 10px;
 }
 
 #statusContainer > label {
 }
 
 #sortContainer > button {
-    padding: 2px;
-    background-color: gray;
-    color: white;
+  padding: 2px;
+  background-color: gray;
+  color: white;
 }
 
 #specialContainer {
-    display: flex;
-    flex-direction: column;
+  display: flex;
+  flex-direction: column;
 }
 
 #filterContainer {
-    display: flex;
-    flex-direction: row;
+  display: flex;
+  flex-direction: row;
 }
 
 #searchField {
-    width: 100%;
-    font-size: 20px;
+  width: 100%;
+  font-size: 20px;
 }
 
 #searchButton {
-    padding-left: 10px;
-    padding-right: 10px;
+  padding-left: 10px;
+  padding-right: 10px;
 }
 
 #clearButton {
-    padding-left: 10px;
-    padding-right: 10px;
+  padding-left: 10px;
+  padding-right: 10px;
 }
 
 #searchContainer {
-    display: flex;
-    height: 50px;
-    font-size: 20px;
-    border: 1px solid red;
+  display: flex;
+  height: 50px;
+  font-size: 20px;
+  border: 1px solid red;
 }
 
 #sizeContainer {
 }
 
 #sizeContainer > input[type="checkbox"] {
-    margin-left: 10px;
+  margin-left: 10px;
+}
+
+.price-filter {
+  border: 1px solid #ccc;
+  width: 300px;
+  padding-left: 16px;
+  padding-right: 16px;
+  font-family: Arial, sans-serif;
+}
+
+.price-filter h3 {
+  margin-bottom: 16px;
+  font-size: 18px;
+}
+
+.price-slider {
+  position: relative;
+  height: 50px;
+  padding: 0; /* Remove extra padding to align the handles with the track */
+}
+
+.price-slider input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  position: absolute;
+  width: 100%;
+  height: 6px;
+  pointer-events: none;
+  background: transparent;
+  top: 50%;
+  transform: translateY(-50%); /* Center the handles vertically */
+}
+
+.price-slider input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: #4caf50;
+  border-radius: 50%;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.price-slider input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: #4caf50;
+  border-radius: 50%;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.slider-track {
+  position: absolute;
+  top: 50%;
+  left: 0.1em;
+  width: 100%;
+  height: 6px;
+  background: #ddd;
+  transform: translateY(-50%);
+  z-index: 1;
+  border-radius: 3px; /* Make the track rounded */
+}
+
+.price-slider input[type="range"]:nth-child(1) {
+  z-index: 2;
+}
+
+.price-slider input[type="range"]:nth-child(2) {
+  z-index: 3;
+}
+
+.slider-values {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+.slider-track::after {
+  content: "";
+  position: absolute;
+  height: 100%;
+  background: #4caf50;
+  z-index: 1;
 }

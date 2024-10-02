@@ -342,21 +342,8 @@ function addSizeFilters() {
       label.innerText = size;
     }
 
-    // TODO: optimize this; this is ugly
-    if (oldCheckedSizes.includes(size)) {
+    if (oldCheckedSizes.includes(size) && globalFilters.filter((f) => f.name === size).length === 1) {
       checkbox.checked = true;
-      let filter = {
-        name: size,
-        condition: (item) => hasItemClothingSize(item, size),
-        action: showItem,
-      };
-      if (checkbox.checked) {
-        globalFilters.push(filter);
-      } else {
-        globalFilters = globalFilters.filter((f) => f.name !== filter.name);
-      }
-
-      applyFilters(getItems(), globalFilters, hideItem);
     }
 
     sizeLabelContainer.appendChild(checkbox);
@@ -388,7 +375,15 @@ function addStatusFilters() {
 
   // if statusContainer already exists, remove it
   let statusContainer = document.getElementById("statusContainer");
+  let oldCheckedStatuses = [];
+
   if (statusContainer !== null) {
+    let tempCheckboxes = statusContainer.getElementsByTagName("input");
+    for (let i = 0; i < tempCheckboxes.length; i++) {
+      if (tempCheckboxes[i].checked) {
+        oldCheckedStatuses.push(tempCheckboxes[i].value);
+      }
+    }
     statusContainer.remove();
   }
   statusContainer = document.createElement("div");
@@ -407,6 +402,10 @@ function addStatusFilters() {
     let label = document.createElement("label");
     label.setAttribute("for", "status" + i);
     label.innerText = statusLabels[i];
+
+    if (oldCheckedStatuses.includes(statusLabels[i]) && globalFilters.filter((f) => f.name === "status" + i).length === 1) {
+      checkbox.checked = true;
+    }
 
     statusLabelContainer.appendChild(checkbox);
     statusLabelContainer.appendChild(label);
@@ -451,6 +450,145 @@ function addStatusFilters() {
   }
 
   filterCont.appendChild(statusContainer);
+}
+
+function addPriceFilter() {
+  let filterCont = document.getElementById("filterContainer");
+
+  // if priceContainer already exists, remove it
+  let priceContainer = document.getElementById("priceContainer");
+  let previousMin = null;
+  let previousMax = null;
+  if (priceContainer !== null) {
+    let sliderMin = document.getElementById("slider-min");
+    let sliderMax = document.getElementById("slider-max");
+    if (sliderMin.value != sliderMin.min || sliderMax.value != sliderMax.max) {
+      previousMin = parseInt(sliderMin.value);
+      previousMax = parseInt(sliderMax.value);
+    }
+    priceContainer.remove();
+  }
+  priceContainer = document.createElement("div");
+  priceContainer.setAttribute("id", "priceContainer");
+  priceContainer.classList.add("price-filter");
+
+  let priceFilterString = `	
+  <div class="price-slider">
+    <input type="range" id="slider-min" min="0" max="1000" value="100" step="1">
+    <input type="range" id="slider-max" min="0" max="1000" value="900" step="1">
+    <div class="slider-values">
+      <span id="min-value">$100</span> - <span id="max-value">$900</span>
+    </div>
+    <div class="slider-track"></div>
+  </div>
+  `;
+
+  priceContainer.innerHTML = priceFilterString;
+  filterCont.appendChild(priceContainer);
+
+  let sliderMin = document.getElementById("slider-min");
+  let sliderMax = document.getElementById("slider-max");
+
+  sliderMax.max = parseInt(getMaxPrice());
+  sliderMin.max = sliderMax.max;
+
+  sliderMin.min = parseInt(getMinPrice());
+  sliderMax.min = sliderMin.min;
+
+  if (previousMin !== null && previousMax !== null && previousMin < previousMax) {
+    sliderMin.value = previousMin;
+    sliderMax.value = previousMax;
+  } else {
+    sliderMin.value = sliderMin.min;
+    sliderMax.value = sliderMax.max;
+  }
+
+  // if values are out of bounds, set them to the bounds
+  if (parseInt(sliderMin.value) < parseInt(sliderMin.min)) {
+    sliderMin.value = sliderMin.min;
+  }
+  if (parseInt(sliderMax.value) > parseInt(sliderMax.max)) {
+    sliderMax.value = sliderMax.max;
+  }
+
+  updateSliderTrack();
+
+  const maxDistanceBetweenValues = 1;
+  
+  sliderMin.addEventListener("input", function () {
+    if (parseInt(sliderMin.value) > parseInt(sliderMax.value) - maxDistanceBetweenValues) {
+      sliderMin.value = parseInt(sliderMax.value) - maxDistanceBetweenValues;
+    }
+    updateSliderTrack();
+  });
+
+  sliderMax.addEventListener("input", function () {
+    if (parseInt(sliderMax.value) < parseInt(sliderMin.value) + maxDistanceBetweenValues) {
+      sliderMax.value = parseInt(sliderMin.value) + maxDistanceBetweenValues;
+    }
+    updateSliderTrack();
+  });
+
+  // Apply the price filter when the user lets go of the slider
+  sliderMax.addEventListener("mouseup", function () {
+    let filter = {
+      name: "price",
+      conditionType: "exclusive",
+      condition: (item) => {
+        let price = getPriceOfItem(item);
+        return price >= parseInt(sliderMin.value) && price <= parseInt(sliderMax.value);
+      },
+      action: showItem,
+    };
+
+    globalFilters = globalFilters.filter((f) => f.name !== "price");
+    globalFilters.push(filter);
+
+    applyFilters(getItems(), globalFilters, hideItem);
+  });
+
+  sliderMin.addEventListener("mouseup", function () {
+    let filter = {
+      name: "price",
+      conditionType: "exclusive",
+      condition: (item) => {
+        let price = getPriceOfItem(item);
+        return price >= parseInt(sliderMin.value) && price <= parseInt(sliderMax.value);
+      },
+      action: showItem,
+    };
+
+    globalFilters = globalFilters.filter((f) => f.name !== "price");
+    globalFilters.push(filter);
+
+    applyFilters(getItems(), globalFilters, hideItem);
+  });
+}
+
+function updateSliderTrack() {
+
+  let sliderMin = document.getElementById("slider-min");
+  let sliderMax = document.getElementById("slider-max");
+  let minValueDisplay = document.getElementById("min-value");
+  let maxValueDisplay = document.getElementById("max-value");
+  let sliderTrack = document.querySelector('.slider-track');
+
+  const min = parseInt(sliderMin.value);
+  const max = parseInt(sliderMax.value);
+
+  // Update display values
+  minValueDisplay.textContent = min;
+  maxValueDisplay.textContent = max;
+
+  // Update track fill
+  const rangeMin = parseInt(sliderMin.min);
+  const rangeMax = parseInt(sliderMin.max);
+  const leftPercent = ((min - rangeMin) / (rangeMax - rangeMin)) * 100;
+  const rightPercent = ((max - rangeMin) / (rangeMax - rangeMin)) * 100;
+  sliderTrack.style.setProperty('--left', leftPercent + '%');
+  sliderTrack.style.setProperty('--right', rightPercent + '%');
+
+  sliderTrack.style.background = `linear-gradient(to right, #ddd ${leftPercent}%, #4CAF50 ${leftPercent}%, #4CAF50 ${rightPercent}%, #ddd ${rightPercent}%)`;
 }
 
 function addSortByPriceButton() {
@@ -650,13 +788,14 @@ function getPriceOfItem(item) {
 }
 
 function isItemSoldOrReserved(item) {
-  return (
-    isItemSold(item) || isItemReserved(item) 
-  );
+  return isItemSold(item) || isItemReserved(item);
 }
 
 function isItemReserved(item) {
-  return item.querySelector('.web_ui__Cell__amplified') !== null || item.innerText.includes("Reserviert");
+  return (
+    item.querySelector(".web_ui__Cell__amplified") !== null ||
+    item.innerText.includes("Reserviert")
+  );
 }
 
 // function getHeartElementOfItem(item) { // Heart is identified by the path tag
@@ -668,7 +807,10 @@ function isItemReserved(item) {
 // }
 
 function isItemSold(item) {
-  return item.querySelector('.web_ui__Cell__success') !== null || item.innerText.includes("Verkauft");
+  return (
+    item.querySelector(".web_ui__Cell__success") !== null ||
+    item.innerText.includes("Verkauft")
+  );
 }
 
 function hideItem(item) {
@@ -689,11 +831,40 @@ function showItems(items) {
   }
 }
 
+function isItemVisible(item) {
+  return item.style.display !== "none";
+}
+
 function clearSearch() {
   globalFilters = globalFilters.filter((f) => f.name !== "search"); // remove search filter
   applyFilters(getItems(), globalFilters, hideItem);
   document.getElementById("searchField").value = "";
 }
+
+function getMaxPrice() {
+  let items = getItems();
+  let maxPrice = 0;
+  for (let i = 0; i < items.length; i++) {
+    let price = getPriceOfItem(items[i]);
+    if (price > maxPrice) {
+      maxPrice = price;
+    }
+  }
+  return maxPrice;
+}
+
+function getMinPrice() {
+  let items = getItems();
+  let minPrice = 999999;
+  for (let i = 0; i < items.length; i++) {
+    let price = getPriceOfItem(items[i]);
+    if (price < minPrice) {
+      minPrice = price;
+    }
+  }
+  return minPrice;
+}
+
 
 function searchForTerm() {
   let searchTerm = document.getElementById("searchField").value;
@@ -799,84 +970,35 @@ function applyFilters(items, filters, action) {
   let exclusiveFilters = filters.filter((f) => f.conditionType === "exclusive");
   filters = filters.filter((f) => f.conditionType !== "exclusive");
 
-  // TODO: This may be better than the current implementation but it is not tested
-  /*
   for (let itemIdx = 0; itemIdx < items.length; itemIdx++) {
     let item = items[itemIdx];
-    let filtered = true;
+    showItem(item);
+    let accepted = true;
 
     // if an item meets all exclusive filters, it is exclusively filtered
     // this allows to combine exclusive filters e.g. search and availability
     for (let xfilterIdx = 0; xfilterIdx < exclusiveFilters.length; xfilterIdx++) {
       if(exclusiveFilters[xfilterIdx].condition(item) === false) {
-        filtered = false;
+        accepted = false;
         break;
       }
     }
 
     let orFiltered = false;
-    if (filtered) {
+    if (accepted) {
       for (let filterIdx = 0; filterIdx < filters.length; filterIdx++) {
         if (filters[filterIdx].condition(item) === true) {
           orFiltered = true;
           filters[filterIdx].action(item);
         }
       }
-    } 
-
-    // if an item is not exclusively filtered and not orFiltered, apply the action
-    if (!filtered || !orFiltered) {
+      if (!orFiltered && filters.length !== 0) {
+        action(item);
+      }
+    } else {
       action(item);
     }
   }
-  */
-
-  // apply exclusive filters
-  for (let i = 0; i < exclusiveFilters.length; i++) {
-    let filter = exclusiveFilters[i];
-    for (let j = 0; j < items.length; j++) {
-      if (filter.condition(items[j])) {
-        // if exlusively filtered
-        if (filters.length === 0) {
-          filter.action(items[j]);
-        }
-
-        for (let k = 0; k < filters.length; k++) {
-          // filter by other filters
-          if (filters[k].condition(items[j])) {
-            filters[k].action(items[j]);
-            break;
-          } else {
-            action(items[j]);
-          }
-        }
-      } else {
-        // if not exlusively filtered
-        action(items[j]);
-      }
-    }
-  }
-
-  // do nothing if there are no filters left
-  if (exclusiveFilters.length != 0) {
-    return;
-  }
-
-  for (let i = 0; i < items.length; i++) {
-    let filtered = false;
-    for (let j = 0; j < filters.length; j++) {
-      if (filters[j].condition(items[i])) {
-        filters[j].action(items[i]);
-        filtered = true;
-        break;
-      }
-    }
-
-    if (!filtered) {
-      action(items[i]);
-    }
-  }
-
   updateItemCounter();
 }
 
@@ -906,6 +1028,7 @@ function addPaddingTopToAllItems() {
 function websiteChange() {
   addSizeFilters();
   addStatusFilters();
+  addPriceFilter();
   addSortByPriceButton();
   console.log("Website changed");
   applyFilters(getItems(), globalFilters, hideItem);
@@ -917,7 +1040,7 @@ function sortByPrice(sortOrder) {
 
   let prices = [];
   for (let i = 0; i < items.length; i++) {
-    let price = getPriceOfItem(items[i])
+    let price = getPriceOfItem(items[i]);
     prices.push(price);
   }
 
