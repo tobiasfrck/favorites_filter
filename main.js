@@ -342,7 +342,10 @@ function addSizeFilters() {
       label.innerText = size;
     }
 
-    if (oldCheckedSizes.includes(size) && globalFilters.filter((f) => f.name === size).length === 1) {
+    if (
+      oldCheckedSizes.includes(size) &&
+      globalFilters.filter((f) => f.name === size).length === 1
+    ) {
       checkbox.checked = true;
     }
 
@@ -403,7 +406,10 @@ function addStatusFilters() {
     label.setAttribute("for", "status" + i);
     label.innerText = statusLabels[i];
 
-    if (oldCheckedStatuses.includes(statusLabels[i]) && globalFilters.filter((f) => f.name === "status" + i).length === 1) {
+    if (
+      oldCheckedStatuses.includes(statusLabels[i]) &&
+      globalFilters.filter((f) => f.name === "status" + i).length === 1
+    ) {
       checkbox.checked = true;
     }
 
@@ -472,18 +478,61 @@ function addPriceFilter() {
   priceContainer.setAttribute("id", "priceContainer");
   priceContainer.classList.add("price-filter");
 
-  let priceFilterString = `	
-  <div class="price-slider">
-    <input type="range" id="slider-min" min="0" max="1000" value="100" step="1">
-    <input type="range" id="slider-max" min="0" max="1000" value="900" step="1">
-    <div class="slider-values">
-      <span id="min-value">$100</span> - <span id="max-value">$900</span>
-    </div>
-    <div class="slider-track"></div>
-  </div>
-  `;
+  // Create the main div element with class "price-slider"
+  priceSliderDiv = document.createElement("div");
+  priceSliderDiv.className = "price-slider";
 
-  priceContainer.innerHTML = priceFilterString;
+  // Create the first input (slider-min)
+  sliderMinInput = document.createElement("input");
+  sliderMinInput.type = "range";
+  sliderMinInput.id = "slider-min";
+  sliderMinInput.min = "0";
+  sliderMinInput.max = "1000";
+  sliderMinInput.value = "100";
+  sliderMinInput.step = "1";
+
+  // Create the second input (slider-max)
+  sliderMaxInput = document.createElement("input");
+  sliderMaxInput.type = "range";
+  sliderMaxInput.id = "slider-max";
+  sliderMaxInput.min = "0";
+  sliderMaxInput.max = "1000";
+  sliderMaxInput.value = "900";
+  sliderMaxInput.step = "1";
+
+  // Create the div for slider values with class "slider-values"
+  sliderValuesDiv = document.createElement("div");
+  sliderValuesDiv.className = "slider-values";
+
+  // Create the span for min-value
+  minValueSpan = document.createElement("span");
+  minValueSpan.id = "min-value";
+  minValueSpan.textContent = "$100";
+
+  // Create the text node " - " for between the min and max values
+  separatorText = document.createTextNode(" - ");
+
+  // Create the span for max-value
+  maxValueSpan = document.createElement("span");
+  maxValueSpan.id = "max-value";
+  maxValueSpan.textContent = "$900";
+
+  // Append the min-value span, separator text, and max-value span to the slider-values div
+  sliderValuesDiv.appendChild(minValueSpan);
+  sliderValuesDiv.appendChild(separatorText);
+  sliderValuesDiv.appendChild(maxValueSpan);
+
+  // Create the div for slider track
+  sliderTrackDiv = document.createElement("div");
+  sliderTrackDiv.className = "slider-track";
+
+  // Append all created elements to the main div
+  priceSliderDiv.appendChild(sliderMinInput);
+  priceSliderDiv.appendChild(sliderMaxInput);
+  priceSliderDiv.appendChild(sliderValuesDiv);
+  priceSliderDiv.appendChild(sliderTrackDiv);
+
+  priceContainer.appendChild(priceSliderDiv);
   filterCont.appendChild(priceContainer);
 
   let sliderMin = document.getElementById("slider-min");
@@ -495,7 +544,11 @@ function addPriceFilter() {
   sliderMin.min = parseInt(getMinPrice());
   sliderMax.min = sliderMin.min;
 
-  if (previousMin !== null && previousMax !== null && previousMin < previousMax) {
+  if (
+    previousMin !== null &&
+    previousMax !== null &&
+    previousMin < previousMax
+  ) {
     sliderMin.value = previousMin;
     sliderMax.value = previousMax;
   } else {
@@ -514,16 +567,22 @@ function addPriceFilter() {
   updateSliderTrack();
 
   const maxDistanceBetweenValues = 1;
-  
+
   sliderMin.addEventListener("input", function () {
-    if (parseInt(sliderMin.value) > parseInt(sliderMax.value) - maxDistanceBetweenValues) {
+    if (
+      parseInt(sliderMin.value) >
+      parseInt(sliderMax.value) - maxDistanceBetweenValues
+    ) {
       sliderMin.value = parseInt(sliderMax.value) - maxDistanceBetweenValues;
     }
     updateSliderTrack();
   });
 
   sliderMax.addEventListener("input", function () {
-    if (parseInt(sliderMax.value) < parseInt(sliderMin.value) + maxDistanceBetweenValues) {
+    if (
+      parseInt(sliderMax.value) <
+      parseInt(sliderMin.value) + maxDistanceBetweenValues
+    ) {
       sliderMax.value = parseInt(sliderMin.value) + maxDistanceBetweenValues;
     }
     updateSliderTrack();
@@ -536,7 +595,10 @@ function addPriceFilter() {
       conditionType: "exclusive",
       condition: (item) => {
         let price = getPriceOfItem(item);
-        return price >= parseInt(sliderMin.value) && price <= parseInt(sliderMax.value);
+        return (
+          price >= parseInt(sliderMin.value) &&
+          price <= parseInt(sliderMax.value)
+        );
       },
       action: showItem,
     };
@@ -553,7 +615,10 @@ function addPriceFilter() {
       conditionType: "exclusive",
       condition: (item) => {
         let price = getPriceOfItem(item);
-        return price >= parseInt(sliderMin.value) && price <= parseInt(sliderMax.value);
+        return (
+          price >= parseInt(sliderMin.value) &&
+          price <= parseInt(sliderMax.value)
+        );
       },
       action: showItem,
     };
@@ -566,12 +631,11 @@ function addPriceFilter() {
 }
 
 function updateSliderTrack() {
-
   let sliderMin = document.getElementById("slider-min");
   let sliderMax = document.getElementById("slider-max");
   let minValueDisplay = document.getElementById("min-value");
   let maxValueDisplay = document.getElementById("max-value");
-  let sliderTrack = document.querySelector('.slider-track');
+  let sliderTrack = document.querySelector(".slider-track");
 
   const min = parseInt(sliderMin.value);
   const max = parseInt(sliderMax.value);
@@ -585,8 +649,8 @@ function updateSliderTrack() {
   const rangeMax = parseInt(sliderMin.max);
   const leftPercent = ((min - rangeMin) / (rangeMax - rangeMin)) * 100;
   const rightPercent = ((max - rangeMin) / (rangeMax - rangeMin)) * 100;
-  sliderTrack.style.setProperty('--left', leftPercent + '%');
-  sliderTrack.style.setProperty('--right', rightPercent + '%');
+  sliderTrack.style.setProperty("--left", leftPercent + "%");
+  sliderTrack.style.setProperty("--right", rightPercent + "%");
 
   sliderTrack.style.background = `linear-gradient(to right, #ddd ${leftPercent}%, #4CAF50 ${leftPercent}%, #4CAF50 ${rightPercent}%, #ddd ${rightPercent}%)`;
 }
@@ -865,7 +929,6 @@ function getMinPrice() {
   return minPrice;
 }
 
-
 function searchForTerm() {
   let searchTerm = document.getElementById("searchField").value;
 
@@ -977,8 +1040,12 @@ function applyFilters(items, filters, action) {
 
     // if an item meets all exclusive filters, it is exclusively filtered
     // this allows to combine exclusive filters e.g. search and availability
-    for (let xfilterIdx = 0; xfilterIdx < exclusiveFilters.length; xfilterIdx++) {
-      if(exclusiveFilters[xfilterIdx].condition(item) === false) {
+    for (
+      let xfilterIdx = 0;
+      xfilterIdx < exclusiveFilters.length;
+      xfilterIdx++
+    ) {
+      if (exclusiveFilters[xfilterIdx].condition(item) === false) {
         accepted = false;
         break;
       }
