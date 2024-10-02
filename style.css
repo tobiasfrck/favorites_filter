@@ -1,0 +1,51 @@
+#statusContainer > input[type="checkbox"] {
+    margin-left: 10px;
+}
+
+#statusContainer > label {
+}
+
+#sortContainer > button {
+    padding: 2px;
+    background-color: gray;
+    color: white;
+}
+
+#specialContainer {
+    display: flex;
+    flex-direction: column;
+}
+
+#filterContainer {
+    display: flex;
+    flex-direction: row;
+}
+
+#searchField {
+    width: 100%;
+    font-size: 20px;
+}
+
+#searchButton {
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+#clearButton {
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+#searchContainer {
+    display: flex;
+    height: 50px;
+    font-size: 20px;
+    border: 1px solid red;
+}
+
+#sizeContainer {
+}
+
+#sizeContainer > input[type="checkbox"] {
+    margin-left: 10px;
+}

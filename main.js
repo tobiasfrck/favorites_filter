@@ -332,7 +332,6 @@ function addSizeFilters() {
     checkbox.setAttribute("type", "checkbox");
     checkbox.setAttribute("id", "size" + i);
     checkbox.setAttribute("value", size);
-    checkbox.style.marginLeft = "10px";
 
     let label = document.createElement("label");
     if (size === "") {
@@ -404,7 +403,6 @@ function addStatusFilters() {
     checkbox.setAttribute("type", "checkbox");
     checkbox.setAttribute("id", "status" + i);
     checkbox.setAttribute("value", statusLabels[i]);
-    checkbox.style.marginLeft = "10px";
 
     let label = document.createElement("label");
     label.setAttribute("for", "status" + i);
@@ -473,9 +471,6 @@ function addSortByPriceButton() {
   sortContainer.setAttribute("id", "sortContainer");
 
   let sortButton = document.createElement("button");
-  sortButton.style.padding = "2px";
-  sortButton.style.backgroundColor = "gray";
-  sortButton.style.color = "white";
   sortButton.setAttribute("id", "sortButton");
   sortButton.setAttribute("lowtohigh", 1);
   sortButton.innerText = "Sort by price (low to high)";
@@ -540,16 +535,12 @@ function addSpecialElementContainer() {
   let itemcontainer = document.querySelectorAll(".l-header,.js-header")[0];
   let specialContainer = document.createElement("div");
   specialContainer.setAttribute("id", "specialContainer");
-  specialContainer.style.display = "flex";
-  specialContainer.style.flexDirection = "column";
   itemcontainer.appendChild(specialContainer);
 }
 
 function addFilterContainer() {
   let filterContainer = document.createElement("div");
   filterContainer.setAttribute("id", "filterContainer");
-  filterContainer.style.display = "flex";
-  filterContainer.style.flexDirection = "row";
 
   let itemcontainer = document.getElementById("specialContainer");
   itemcontainer.appendChild(filterContainer);
@@ -559,29 +550,19 @@ function addSearchBar() {
   let searchField = document.createElement("input");
   searchField.setAttribute("type", "text");
   searchField.setAttribute("id", "searchField");
-  searchField.style.width = "100%";
-  searchField.style.fontSize = "20px";
   searchField.setAttribute("placeholder", "Search for a term");
 
   let searchButton = document.createElement("button");
   searchButton.setAttribute("id", "searchButton");
-  searchButton.style.paddingLeft = "10px";
-  searchButton.style.paddingRight = "10px";
   searchButton.innerText = "Search";
 
   // clear button
   let clearButton = document.createElement("button");
   clearButton.setAttribute("id", "clearButton");
-  clearButton.style.paddingLeft = "10px";
-  clearButton.style.paddingRight = "10px";
   clearButton.innerText = "Clear";
 
   let searchContainer = document.createElement("div");
   searchContainer.setAttribute("id", "searchContainer");
-  searchContainer.style.display = "flex";
-  searchContainer.style.height = "50px";
-  searchContainer.style.fontSize = "20px";
-  searchContainer.style.border = "1px solid red";
 
   searchContainer.appendChild(searchField);
   searchContainer.appendChild(searchButton);
@@ -653,7 +634,7 @@ function updateItemCounter() {
 
 function getDescriptionOfItem(item) {
   return item.querySelector(
-    ".new-item-box__description+ .new-item-box__description .web_ui__Text__left"
+    ".u-justify-content-between+ .new-item-box__description .web_ui__Text__left"
   );
 }
 

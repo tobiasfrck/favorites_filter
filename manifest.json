@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Fav-Filter for Vinted",
   "description": "Filter favorite items on Vinted.",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "icons": {
     "16": "images/icon-16.png",
     "32": "images/icon-32.png",
@@ -53,7 +53,7 @@
       ],
       "js": ["main.js"],
       "run_at": "document_end",
-      "css": []
+      "css": ["style.css"]
     }
   ],
 
