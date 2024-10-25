@@ -26,3 +26,7 @@ Chrome version is not available yet but it can be easily ported to Chrome and I 
 ## Install
 
 [Add it to Firefox](https://addons.mozilla.org/de/firefox/addon/filter-favorites/)
+
+## Screenshots
+
+![Screenshot of User Interface](Screenshot.png)

@@ -2,18 +2,53 @@
   margin-left: 10px;
 }
 
-#statusContainer > label {
+#sizeContainer > div,
+#statusContainer > div {
+  padding: 4px 6px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+#sizeContainer > div label, 
+#statusContainer > div label {
+  white-space: nowrap;
+}
+
+#sizeContainer,
+#statusContainer {
+  padding: 10px 20px;
+}
+
+#sizeContainer > input[type="checkbox"] {
+  margin-left: 10px;
 }
 
 #sortContainer > button {
-  padding: 2px;
-  background-color: gray;
+  padding: 6px 10px;
+  background-color: #007782;
   color: white;
+  margin: 10px;
+  margin-top: 22px;
+  font-size: 1.2rem;
+  font-weight: 500;
+  border-radius: 6px;
+  min-width: 100px;
+  border: 2px solid #007782;
+}
+#sortContainer > button:active {
+  background-color: white;
+  color: #007782;
+  border: 2px solid #007782;
 }
 
 #specialContainer {
   display: flex;
   flex-direction: column;
+  border-bottom: 2px solid #f2f2f2;
+}
+
+#statusContainer > div > input[type="checkbox"] {
+  margin-right: 6px;
+  accent-color: #007782;
 }
 
 #filterContainer {
@@ -21,41 +56,63 @@
   flex-direction: row;
 }
 
+#filterContainer > div {
+  border-top: 2px solid #f2f2f2;
+}
+
 #searchField {
   width: 100%;
-  font-size: 20px;
+  font-size: 1.7rem;
+  background-color: transparent;
+  color: black;
+  border: none;
+  padding: 6px 12px;
 }
 
 #searchButton {
-  padding-left: 10px;
-  padding-right: 10px;
+  padding-left: 25px;
+  padding-right: 25px;
+  background-color: #007782;
+  color: white;
+  font-size: 1.7rem;
+}
+#searchButton:active {
+  background-color: #052326;
+  color: white;
 }
 
 #clearButton {
-  padding-left: 10px;
-  padding-right: 10px;
+  padding-top: 2.5px;
+  padding-left: 15px;
+  padding-right: 15px;
+  border: none;
+  background-color: #052326;
+  color: white;
+  font-size: 1.4rem;
+  font-weight: 500;
+}
+#clearButton:active {
+  background-color: white;
+  color: black;
 }
 
 #searchContainer {
   display: flex;
   height: 50px;
   font-size: 20px;
-  border: 1px solid red;
-}
-
-#sizeContainer {
-}
-
-#sizeContainer > input[type="checkbox"] {
-  margin-left: 10px;
+  border: 2px solid #007782;
+  background-color: #f2f2f2;
 }
 
 .price-filter {
-  border: 1px solid #ccc;
-  width: 300px;
-  padding-left: 16px;
-  padding-right: 16px;
   font-family: Arial, sans-serif;
+  min-width: 300px;
+  width: auto;
+  padding-left: 20px;
+  padding-right: 20px;
+  border-left: 2px solid #f2f2f2;
+  border-right: 2px solid #f2f2f2;
+  flex: 1;
 }
 
 .price-filter h3 {
@@ -65,7 +122,7 @@
 
 .price-slider {
   position: relative;
-  height: 50px;
+  height: 65px;
   padding: 0; /* Remove extra padding to align the handles with the track */
 }
 
@@ -86,7 +143,8 @@
   appearance: none;
   width: 20px;
   height: 20px;
-  background: #4caf50;
+  background: rgb(0, 119, 130);
+  border: none;
   border-radius: 50%;
   cursor: pointer;
   pointer-events: auto;
@@ -95,16 +153,25 @@
 .price-slider input[type="range"]::-moz-range-thumb {
   width: 20px;
   height: 20px;
-  background: #4caf50;
+  background: rgb(0, 119, 130);
   border-radius: 50%;
+  border: none;
   cursor: pointer;
   pointer-events: auto;
 }
 
+#slider-max::-webkit-slider-thumb {
+  background: rgb(175, 76, 118);
+}
+
+#slider-max::-moz-range-thumb {
+  background: rgb(175, 76, 118);
+}
+
 .slider-track {
   position: absolute;
-  top: 50%;
-  left: 0.1em;
+  top: 53%;
+  left: 0.18em;
   width: 100%;
   height: 6px;
   background: #ddd;
@@ -125,7 +192,8 @@
   display: flex;
   justify-content: space-between;
   font-size: 14px;
-  margin-top: 8px;
+  font-weight: 500;
+  margin-top: 10px;
 }
 
 .slider-track::after {

@@ -651,8 +651,7 @@ function updateSliderTrack() {
   const rightPercent = ((max - rangeMin) / (rangeMax - rangeMin)) * 100;
   sliderTrack.style.setProperty("--left", leftPercent + "%");
   sliderTrack.style.setProperty("--right", rightPercent + "%");
-
-  sliderTrack.style.background = `linear-gradient(to right, #ddd ${leftPercent}%, #4CAF50 ${leftPercent}%, #4CAF50 ${rightPercent}%, #ddd ${rightPercent}%)`;
+  sliderTrack.style.background = `linear-gradient(to right, rgb(221, 221, 221) ${leftPercent}%, rgb(0, 119, 130) ${leftPercent}%, rgb(175, 76, 118) ${rightPercent}%, rgb(221, 221, 221) ${rightPercent}%)`;
 }
 
 function addSortByPriceButton() {
@@ -684,7 +683,7 @@ function addSortByPriceButton() {
       sortButton.setAttribute("lowtohigh", 0);
       sortByPrice("lowToHigh");
     } else {
-      sortButton.innerText = "Sort by price (low toHigh)";
+      sortButton.innerText = "Sort by price (low to High)";
       sortButton.setAttribute("lowtohigh", 1);
       sortByPrice("highToLow");
     }
@@ -822,15 +821,17 @@ function updateItemCounter() {
       amount + " Items " + soldItems + " Sold " + reservedItems + " Reserved"
     );
 
+    itemCounterAtTop.setAttribute("style", "margin-top: -24px !important")
+
     itemCounterAtTop.innerText =
       amount +
       "/" +
       items.length +
-      " Items " +
+      " Items (sold: " +
       soldItems +
-      " Sold " +
+      "; reserved: " +
       reservedItems +
-      " Reserved";
+      ")";
   }
 }
 
