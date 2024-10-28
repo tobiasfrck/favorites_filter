@@ -6,7 +6,7 @@ You can easily filter your favorites on Vinted by size, availability and search 
 
 - Firefox
 
-Chrome version is not available yet but it can be easily ported to Chrome and I will do that probably.
+The Chrome version is available [here](https://github.com/tobiasfrck/favorites_filter/tree/chrome-version) but will receive delayed updates and will probably not be on the chrome store due to the registration fee.
 
 ## Features
 
