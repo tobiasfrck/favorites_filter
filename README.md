@@ -20,7 +20,6 @@ Chrome version is not available yet but it can be easily ported to Chrome and I 
 ## Future features
 
 - Save and load items (basically load all favorites at once)
-- Better UI (maybe)
 - Highlight items with certain keywords/brands/sizes (maybe)
 
 ## Install
