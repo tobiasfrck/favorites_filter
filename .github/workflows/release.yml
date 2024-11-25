@@ -30,10 +30,7 @@ jobs:
           zip -r dist/extension.zip * -x ".git*" ".github*" "node_modules/*" "dist/*"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ github.event.inputs.version }}
-          name: ${{ github.event.inputs.release_name || github.event.inputs.version }}
-          files: dist/extension.zip
+        run: |
+          gh release create ${{ github.event.inputs.version }} dist/extension.zip --title "${{ github.event.inputs.release_name || github.event.inputs.version }}" --notes "Release created via GitHub Actions"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
