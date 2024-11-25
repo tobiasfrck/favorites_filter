@@ -1,0 +1,24 @@
+name: Chrome Extension Release
+
+on:
+  workflow_dispatch:  # Allows manual triggering of the workflow from GitHub Actions UI
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Zip the extension files
+        run: |
+          mkdir -p dist
+          zip -r dist/extension.zip * -x ".git*" ".github*" "node_modules/*" "dist/*"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/extension.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
