@@ -91,12 +91,15 @@ function updateInternalItemCounter() {
 
 document.addEventListener("readystatechange", function (event) {
   if (document.URL.includes("vinted") && document.readyState === "complete") {
-    Retry(websiteChange, 500, 5)
+    let exceptions = Retry(websiteChange, 1000, 8)
       .then(() => {
         console.log("AddedPadding successfully");
         addPaddingTopToAllItems();
       })
       .catch((exceptions) => console.log("AddedPadding items.", exceptions));
+    if (exceptions.length > 0) {
+      console.log("Exceptions", exceptions);
+    }
     let listElm = document.querySelector(".feed-grid");
     observeDOM(listElm, function (m) {
       var addedNodes = [];
@@ -743,6 +746,11 @@ function addFilterContainer() {
   let filterContainer = document.createElement("div");
   filterContainer.setAttribute("id", "filterContainer");
 
+  // Log, when the filterContainer is removed
+  filterContainer.addEventListener("DOMNodeRemoved", function () {
+    //console.log("FilterContainer removed");
+  });
+
   let itemcontainer = document.getElementById("specialContainer");
   itemcontainer.appendChild(filterContainer);
 }
@@ -1094,6 +1102,12 @@ function addPaddingTopToAllItems() {
 }
 
 function websiteChange() {
+  if (document.querySelector("#specialContainer") === null) {
+    console.log("SpecialContainer not found");
+    addSpecialElementContainer();
+    addSearchBar();
+    addFilterContainer();
+  }
   addSizeFilters();
   addStatusFilters();
   addPriceFilter();
