@@ -1102,7 +1102,7 @@ function addPaddingTopToAllItems() {
 }
 
 function websiteChange() {
-  if (document.querySelector("#specialContainer") === null) {
+  if (document.querySelector("#specialContainer") === null && (isFavoriteSite() || isMemberSite())) {
     console.log("SpecialContainer not found");
     addSpecialElementContainer();
     addSearchBar();
