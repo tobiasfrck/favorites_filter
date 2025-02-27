@@ -728,8 +728,8 @@ function getAllPossibleSizes() {
   let sizes = [];
   for (let i = 0; i < items.length; i++) {
     let description = getDescriptionOfItem(items[i]);
-    if (!sizes.includes(description.innerText)) {
-      sizes.push(description.innerText);
+    if (!sizes.includes(description)) {
+      sizes.push(description);
     }
   }
   return sizes;
@@ -844,9 +844,14 @@ function updateItemCounter() {
 }
 
 function getDescriptionOfItem(item) {
-  return item.querySelector(
+  let description = item.querySelector(
     ".u-justify-content-between+ .new-item-box__description .web_ui__Text__left"
-  );
+  ).innerText;
+
+  if (description.includes("·")) {
+    description = description.split("·")[0].trim();
+  }
+  return description;
 }
 
 function getTitleOfItem(item) {
@@ -956,7 +961,7 @@ function searchForTerm() {
     condition: (item) =>
       doesItemTitleContainSimilarSearchTerm(item, searchTerm.toLowerCase()) ||
       getDescriptionOfItem(item)
-        .innerText.toLowerCase()
+        .toLowerCase()
         .includes(searchTerm.toLowerCase()),
     action: showItem,
   });
@@ -995,7 +1000,7 @@ function makeSizeOfItemsEqual() {
 
 function hasItemClothingSize(item, size) {
   let description = getDescriptionOfItem(item);
-  return description.innerText === size;
+  return description === size;
 }
 
 function doesItemTitleContainSimilarSearchTerm(item, searchTerm) {
