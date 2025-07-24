@@ -29,3 +29,6 @@ The Chrome version is available [here](https://github.com/tobiasfrck/favorites_f
 ## Screenshots
 
 ![Screenshot of User Interface](Screenshot.png)
+
+## Disclaimer
+The code quality may not be the best as I this is my first browser addon and I just wanted to try some stuff.
