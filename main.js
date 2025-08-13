@@ -82,7 +82,7 @@ var observeDOM = (function () {
 })();
 
 function updateInternalItemCounter() {
-  if (getItems().length !== itemCount) {
+  if ((isFavoriteSite() || isMemberSite()) && getItems().length !== itemCount) {
     itemCount = getItems().length;
     websiteChange();
     updateItemCounter();
@@ -746,11 +746,6 @@ function addFilterContainer() {
   let filterContainer = document.createElement("div");
   filterContainer.setAttribute("id", "filterContainer");
 
-  // Log, when the filterContainer is removed
-  filterContainer.addEventListener("DOMNodeRemoved", function () {
-    //console.log("FilterContainer removed");
-  });
-
   let itemcontainer = document.getElementById("specialContainer");
   itemcontainer.appendChild(filterContainer);
 }
@@ -807,7 +802,7 @@ function getItems() {
 
 function updateItemCounter() {
   let items = getItems();
-  let itemCounterAtTop = document.querySelector(".web_ui__Text__parent");
+  let itemCounterAtTop = document.querySelector("h1.web_ui__Text__text");
   if (itemCounterAtTop) {
     // only count items that are visible
     let amount = 0;
