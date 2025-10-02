@@ -856,7 +856,10 @@ function getTitleOfItem(item) {
 }
 
 function getPriceOfItem(item) {
-  let priceText = item.querySelector(".web_ui__Text__muted").innerText;
+  let priceText = item.querySelector(".web_ui__Text__muted")?.innerText;
+  if (priceText === undefined || priceText === null) {
+    return 0;
+  }
   return parseFloat(priceText.replace(/[^0-9.,]/g, "").replace(",", ".")); // remove all non-numeric characters and replace comma with dot
 }
 
