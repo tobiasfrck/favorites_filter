@@ -124,6 +124,7 @@
   position: relative;
   height: 65px;
   padding: 0; /* Remove extra padding to align the handles with the track */
+  z-index: -1;
 }
 
 .price-slider input[type="range"] {
