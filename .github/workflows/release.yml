@@ -6,23 +6,23 @@ on:
       branch:
         description: 'Select the branch to build from'
         required: true
-        default: 'chrome-version'
-      version:
-        description: 'Version for the release'
-        required: true
-      release_name:
-        description: 'Name for the release'
-        required: false
+        default: 'main'
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # required to create the tag and the release
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.branch }}
+
+      - name: Read version from manifest
+        id: manifest
+        run: echo "version=$(jq -r .version manifest.json)" >> "$GITHUB_OUTPUT"
 
       - name: Zip the extension files
         run: |
@@ -30,7 +30,9 @@ jobs:
           zip -r dist/extension.zip * -x ".git*" ".github*" "node_modules/*" "dist/*"
 
       - name: Create GitHub Release
-        run: |
-          gh release create ${{ github.event.inputs.version }} dist/extension.zip --title "${{ github.event.inputs.release_name || github.event.inputs.version }}" --notes "Release created via GitHub Actions"
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/extension.zip
+          tag_name: v${{ steps.manifest.outputs.version }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

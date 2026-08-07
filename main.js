@@ -6,8 +6,11 @@ var state = typeof state === "undefined" ? "off" : state;
 let globalFilters = [];
 let itemCount = 0;
 
+// Firefox exposes the WebExtension APIs as `browser`, Chrome as `chrome`.
+let extApi = globalThis.browser ?? globalThis.chrome;
+
 // listen for messages from background.js
-browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
+extApi.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.message === "actionButtonClicked") {
     console.log("action button clicked!");
     document.URL.includes("vinted")
@@ -92,30 +95,31 @@ function updateInternalItemCounter() {
 document.addEventListener("readystatechange", function (event) {
   if (document.URL.includes("vinted") && document.readyState === "complete") {
     let exceptions = Retry(websiteChange, 1000, 8)
-      .then(() => {
-        console.log("AddedPadding successfully");
-        addPaddingTopToAllItems();
-      })
-      .catch((exceptions) => console.log("AddedPadding items.", exceptions));
+      .then(() => console.log("websiteChange successfully"))
+      .catch((exceptions) => console.log("websiteChange failed.", exceptions));
     if (exceptions.length > 0) {
       console.log("Exceptions", exceptions);
     }
-    let listElm = document.querySelector(".feed-grid");
+    // The grid classes are hashed CSS modules, so ".feed-grid" never matches.
+    let listElm = getItemContainer()[0];
     observeDOM(listElm, function (m) {
-      var addedNodes = [];
-
-      m.forEach(
-        (record) =>
-          record.addedNodes.length & addedNodes.push(...record.addedNodes)
-      );
-
       if (document.URL.includes("catalog")) {
         return;
       }
 
-      makeSizeOfItemsEqual();
+      // Only react to added items, not to every image swap inside the grid
+      let addedItems = m.some((record) =>
+        [...record.addedNodes].some(
+          (node) =>
+            node.nodeType === 1 && node.matches("[class*='grid__item']")
+        )
+      );
+
+      if (!addedItems) {
+        return;
+      }
+
       websiteChange();
-      addPaddingTopToAllItems();
       makeLinksOpenInNewTab();
     });
   }
@@ -131,28 +135,6 @@ if (isFavoriteSite() || isMemberSite()) {
 document.addEventListener("keydown", function (event) {
   if (!isVinted() || document.readyState !== "complete") {
     return;
-  }
-
-  let itemcontainer = document.getElementsByClassName("feed-grid");
-
-  if (itemcontainer === undefined || itemcontainer.length === 0) {
-    console.log("No itemcontainer found");
-    return;
-  }
-
-  let items = itemcontainer[0].getElementsByClassName("feed-grid__item");
-
-  if (items === undefined || items.length === 0) {
-    console.log("No items found");
-    return;
-  }
-
-  if (event.code === "NumpadAdd") {
-    changeItemSize(true);
-  }
-
-  if (event.code === "NumpadSubtract") {
-    changeItemSize(false);
   }
 
   // TODOs:
@@ -179,7 +161,7 @@ document.addEventListener("keydown", function (event) {
       //   heart.style.fill = "red";
       // }
     }
-    browser.storage.local.set({ items: itemData }, function () {
+    extApi.storage.local.set({ items: itemData }, function () {
       console.log(itemData.length + " Items saved. Identifier: data-testid.");
     });
   }
@@ -188,7 +170,7 @@ document.addEventListener("keydown", function (event) {
   if (event.code === "KeyK") {
     console.log("Saving new items.");
     let items = getItems();
-    browser.storage.local.get(["items"], function (result) {
+    extApi.storage.local.get(["items"], function (result) {
       let itemData = result.items;
 
       let soldItemCounter = 0;
@@ -224,7 +206,7 @@ document.addEventListener("keydown", function (event) {
           // }
         }
       }
-      browser.storage.local.set({ items: itemData }, function () {
+      extApi.storage.local.set({ items: itemData }, function () {
         console.log(
           itemData.length +
             " Items in storage. " +
@@ -240,7 +222,7 @@ document.addEventListener("keydown", function (event) {
   // load item elements from chrome persistent storage.local and append them to the itemcontainer, then check for duplicates and remove them
   if (event.code === "Period") {
     let itemcontainer = document.getElementsByClassName("feed-grid");
-    browser.storage.local.get(["items"], function (result) {
+    extApi.storage.local.get(["items"], function (result) {
       let itemData = result.items;
       let items = itemcontainer[0].getElementsByClassName("feed-grid__item");
       let itemTxts = [];
@@ -795,9 +777,18 @@ function addSearchBar() {
 }
 
 function getItems() {
-  let itemcontainer = document.getElementsByClassName("feed-grid");
-  let items = itemcontainer[0].getElementsByClassName("feed-grid__item");
+  let itemcontainer = getItemContainer();
+  if (itemcontainer.length === 0) {
+    return [];
+  }
+  // Only direct children: "[class*='grid__item']" alone also matches the inner
+  // "...grid__item-content" of every item, which returns each item twice.
+  let items = itemcontainer[0].querySelectorAll(":scope > [class*='grid__item']");
   return items;
+}
+function getItemContainer() {
+  let itemcontainer = document.querySelectorAll("[class*='__feed-grid--compact']");
+  return itemcontainer;
 }
 
 function updateItemCounter() {
@@ -838,10 +829,11 @@ function updateItemCounter() {
   }
 }
 
+// Size and Condition
 function getDescriptionOfItem(item) {
-  let description = item.querySelector(
-    ".u-justify-content-between+ .new-item-box__description .web_ui__Text__left"
-  ).innerText;
+  let description = item.querySelectorAll(
+    "[class*='-item-box__description'] > p"
+  )[1].innerText;
 
   if (description.includes("·")) {
     description = description.split("·")[0].trim();
@@ -851,12 +843,12 @@ function getDescriptionOfItem(item) {
 
 function getTitleOfItem(item) {
   return item.querySelectorAll(
-    ".new-item-box__overlay,.new-item-box__overlay--clickable"
-  )[0];
+    "a"
+  )[0].getAttribute("title");
 }
 
 function getPriceOfItem(item) {
-  let priceText = item.querySelector(".web_ui__Text__muted")?.innerText;
+  let priceText = item.querySelector("[class*='ItemBoxPricing-']")?.innerText;
   if (priceText === undefined || priceText === null) {
     return 0;
   }
@@ -967,35 +959,6 @@ function searchForTerm() {
   applyFilters(getItems(), globalFilters, hideItem);
 }
 
-function changeItemSize(increment) {
-  let items = getItems();
-  // increment is a boolean
-  let itemWidth = items[0].style.width;
-  let match = itemWidth.match(/\d+(\.\d+)?/);
-  let number = match ? match[0] : 25;
-  let newWidth = 100 / number;
-  newWidth = Math.round(newWidth);
-  newWidth = increment ? newWidth + 1 : newWidth - 1;
-  for (let i = 0; i < items.length; i++) {
-    // Get 100/number
-    items[i].style.width = 100 / newWidth + "%";
-  }
-}
-
-function makeSizeOfItemsEqual() {
-  let items = getItems();
-  if (items.length !== 0) {
-    let itemWidth = items[0].style.width;
-    let match = itemWidth.match(/\d+(\.\d+)?/);
-    let number = match ? match[0] : 25;
-    let newWidth = 100 / number;
-    newWidth = Math.round(newWidth);
-    for (let i = 0; i < items.length; i++) {
-      items[i].style.width = 100 / newWidth + "%";
-    }
-  }
-}
-
 function hasItemClothingSize(item, size) {
   let description = getDescriptionOfItem(item);
   return description === size;
@@ -1004,7 +967,7 @@ function hasItemClothingSize(item, size) {
 function doesItemTitleContainSimilarSearchTerm(item, searchTerm) {
   const maxDistance = 1;
 
-  let splitTitle = getTitleOfItem(item).title.toLowerCase().split(" ");
+  let splitTitle = getTitleOfItem(item).toLowerCase().split(" ");
 
   for (let i = 0; i < splitTitle.length; i++) {
     if (damerauLevenshteinDistance(splitTitle[i], searchTerm) <= maxDistance) {
@@ -1092,18 +1055,6 @@ function makeLinksOpenInNewTab() {
   }
 }
 
-function addPaddingTopToAllItems() {
-  let itemcontainer = document.getElementsByClassName("feed-grid");
-  let items = itemcontainer[0].getElementsByClassName("feed-grid__item");
-
-  for (let i = 0; i < items.length; i++) {
-    if (items[i].style.paddingTop === "10px") {
-      continue;
-    }
-    items[i].style.paddingTop = "10px";
-  }
-}
-
 function websiteChange() {
   if (document.querySelector("#specialContainer") === null && (isFavoriteSite() || isMemberSite())) {
     console.log("SpecialContainer not found");
@@ -1120,35 +1071,46 @@ function websiteChange() {
 }
 
 function sortByPrice(sortOrder) {
-  let itemcontainer = document.getElementsByClassName("feed-grid");
-  let items = itemcontainer[0].getElementsByClassName("feed-grid__item");
+  let itemcontainer = getItemContainer();
+  if (itemcontainer.length === 0) {
+    console.log("No item container found, not sorting.");
+    return;
+  }
 
-  let prices = [];
+  // Read the price once per item and sort the elements themselves, so that
+  // items with identical prices keep their own position instead of the first
+  // matching element being moved repeatedly.
+  let entries = [];
+  let items = getItems();
   for (let i = 0; i < items.length; i++) {
     let price = getPriceOfItem(items[i]);
-    prices.push(price);
+    entries.push({
+      element: items[i],
+      price: price,
+      hasPrice: !isNaN(price),
+    });
   }
 
-  let sortedPrices =
-    sortOrder === "lowToHigh"
-      ? prices.sort((a, b) => a - b)
-      : prices.sort((a, b) => b - a);
+  entries.sort((a, b) => {
+    // Items without a parsable price go to the end instead of being dropped
+    if (a.hasPrice !== b.hasPrice) {
+      return a.hasPrice ? -1 : 1;
+    }
+    if (!a.hasPrice) {
+      return 0;
+    }
+    return sortOrder === "lowToHigh" ? a.price - b.price : b.price - a.price;
+  });
 
   console.log("Sorting by price: " + sortOrder);
+  console.log(entries.length + " items found");
+  console.log("Sorted prices: " + entries.map((e) => e.price));
 
-  console.log(itemcontainer[0].childNodes.length + " items found");
-
-  for (let i = 0; i < sortedPrices.length; i++) {
-    for (let j = 0; j < items.length; j++) {
-      let price = getPriceOfItem(items[j]);
-      if (price === sortedPrices[i]) {
-        itemcontainer[0].appendChild(items[j]);
-        break;
-      }
-    }
+  let fragment = document.createDocumentFragment();
+  for (let i = 0; i < entries.length; i++) {
+    fragment.appendChild(entries[i].element);
   }
-
-  console.log(itemcontainer[0].childNodes.length + " items found");
+  itemcontainer[0].appendChild(fragment);
 
   console.log("Sorting done");
 }
