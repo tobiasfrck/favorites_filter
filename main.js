@@ -92,30 +92,31 @@ function updateInternalItemCounter() {
 document.addEventListener("readystatechange", function (event) {
   if (document.URL.includes("vinted") && document.readyState === "complete") {
     let exceptions = Retry(websiteChange, 1000, 8)
-      .then(() => {
-        console.log("AddedPadding successfully");
-        addPaddingTopToAllItems();
-      })
-      .catch((exceptions) => console.log("AddedPadding items.", exceptions));
+      .then(() => console.log("websiteChange successfully"))
+      .catch((exceptions) => console.log("websiteChange failed.", exceptions));
     if (exceptions.length > 0) {
       console.log("Exceptions", exceptions);
     }
-    let listElm = document.querySelector(".feed-grid");
+    // The grid classes are hashed CSS modules, so ".feed-grid" never matches.
+    let listElm = getItemContainer()[0];
     observeDOM(listElm, function (m) {
-      var addedNodes = [];
-
-      m.forEach(
-        (record) =>
-          record.addedNodes.length & addedNodes.push(...record.addedNodes)
-      );
-
       if (document.URL.includes("catalog")) {
         return;
       }
 
-      makeSizeOfItemsEqual();
+      // Only react to added items, not to every image swap inside the grid
+      let addedItems = m.some((record) =>
+        [...record.addedNodes].some(
+          (node) =>
+            node.nodeType === 1 && node.matches("[class*='grid__item']")
+        )
+      );
+
+      if (!addedItems) {
+        return;
+      }
+
       websiteChange();
-      addPaddingTopToAllItems();
       makeLinksOpenInNewTab();
     });
   }
@@ -131,28 +132,6 @@ if (isFavoriteSite() || isMemberSite()) {
 document.addEventListener("keydown", function (event) {
   if (!isVinted() || document.readyState !== "complete") {
     return;
-  }
-
-  let itemcontainer = getItemContainer();
-
-  if (itemcontainer === undefined || itemcontainer.length === 0) {
-    console.log("No itemcontainer found");
-    return;
-  }
-
-  let items = getItems();
-
-  if (items === undefined || items.length === 0) {
-    console.log("No items found");
-    return;
-  }
-
-  if (event.code === "NumpadAdd") {
-    changeItemSize(true);
-  }
-
-  if (event.code === "NumpadSubtract") {
-    changeItemSize(false);
   }
 
   // TODOs:
@@ -796,7 +775,12 @@ function addSearchBar() {
 
 function getItems() {
   let itemcontainer = getItemContainer();
-  let items = itemcontainer[0].querySelectorAll("[class*='grid__item']");
+  if (itemcontainer.length === 0) {
+    return [];
+  }
+  // Only direct children: "[class*='grid__item']" alone also matches the inner
+  // "...grid__item-content" of every item, which returns each item twice.
+  let items = itemcontainer[0].querySelectorAll(":scope > [class*='grid__item']");
   return items;
 }
 function getItemContainer() {
@@ -972,35 +956,6 @@ function searchForTerm() {
   applyFilters(getItems(), globalFilters, hideItem);
 }
 
-function changeItemSize(increment) {
-  let items = getItems();
-  // increment is a boolean
-  let itemWidth = items[0].style.width;
-  let match = itemWidth.match(/\d+(\.\d+)?/);
-  let number = match ? match[0] : 25;
-  let newWidth = 100 / number;
-  newWidth = Math.round(newWidth);
-  newWidth = increment ? newWidth + 1 : newWidth - 1;
-  for (let i = 0; i < items.length; i++) {
-    // Get 100/number
-    items[i].style.width = 100 / newWidth + "%";
-  }
-}
-
-function makeSizeOfItemsEqual() {
-  let items = getItems();
-  if (items.length !== 0) {
-    let itemWidth = items[0].style.width;
-    let match = itemWidth.match(/\d+(\.\d+)?/);
-    let number = match ? match[0] : 25;
-    let newWidth = 100 / number;
-    newWidth = Math.round(newWidth);
-    for (let i = 0; i < items.length; i++) {
-      items[i].style.width = 100 / newWidth + "%";
-    }
-  }
-}
-
 function hasItemClothingSize(item, size) {
   let description = getDescriptionOfItem(item);
   return description === size;
@@ -1094,17 +1049,6 @@ function makeLinksOpenInNewTab() {
     for (let j = 0; j < title.length; j++) {
       title[j].setAttribute("target", "_blank");
     }
-  }
-}
-
-function addPaddingTopToAllItems() {
-  let items = getItems();
-
-  for (let i = 0; i < items.length; i++) {
-    if (items[i].style.paddingTop === "10px") {
-      continue;
-    }
-    items[i].style.paddingTop = "10px";
   }
 }
 

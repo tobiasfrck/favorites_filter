@@ -13,7 +13,6 @@ You can easily filter your favorites on Vinted by size, availability and search 
 - Filter by search term
 - Filter by price
 - Sort by price
-- Display more/less items per row with Numpad +/-
 
 ## Future features
 
