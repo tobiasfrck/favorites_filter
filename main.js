@@ -133,14 +133,14 @@ document.addEventListener("keydown", function (event) {
     return;
   }
 
-  let itemcontainer = document.getElementsByClassName("feed-grid");
+  let itemcontainer = getItemContainer();
 
   if (itemcontainer === undefined || itemcontainer.length === 0) {
     console.log("No itemcontainer found");
     return;
   }
 
-  let items = itemcontainer[0].getElementsByClassName("feed-grid__item");
+  let items = getItems();
 
   if (items === undefined || items.length === 0) {
     console.log("No items found");
@@ -795,9 +795,13 @@ function addSearchBar() {
 }
 
 function getItems() {
-  let itemcontainer = document.getElementsByClassName("feed-grid");
-  let items = itemcontainer[0].getElementsByClassName("feed-grid__item");
+  let itemcontainer = getItemContainer();
+  let items = itemcontainer[0].querySelectorAll("[class*='grid__item']");
   return items;
+}
+function getItemContainer() {
+  let itemcontainer = document.querySelectorAll("[class*='__feed-grid--compact']");
+  return itemcontainer;
 }
 
 function updateItemCounter() {
@@ -838,10 +842,11 @@ function updateItemCounter() {
   }
 }
 
+// Size and Condition
 function getDescriptionOfItem(item) {
-  let description = item.querySelector(
-    ".u-justify-content-between+ .new-item-box__description .web_ui__Text__left"
-  ).innerText;
+  let description = item.querySelectorAll(
+    "[class*='-item-box__description'] > p"
+  )[1].innerText;
 
   if (description.includes("·")) {
     description = description.split("·")[0].trim();
@@ -851,12 +856,12 @@ function getDescriptionOfItem(item) {
 
 function getTitleOfItem(item) {
   return item.querySelectorAll(
-    ".new-item-box__overlay,.new-item-box__overlay--clickable"
-  )[0];
+    "a"
+  )[0].getAttribute("title");
 }
 
 function getPriceOfItem(item) {
-  let priceText = item.querySelector(".web_ui__Text__muted")?.innerText;
+  let priceText = item.querySelector("[class*='ItemBoxPricing-']")?.innerText;
   if (priceText === undefined || priceText === null) {
     return 0;
   }
@@ -1004,7 +1009,7 @@ function hasItemClothingSize(item, size) {
 function doesItemTitleContainSimilarSearchTerm(item, searchTerm) {
   const maxDistance = 1;
 
-  let splitTitle = getTitleOfItem(item).title.toLowerCase().split(" ");
+  let splitTitle = getTitleOfItem(item).toLowerCase().split(" ");
 
   for (let i = 0; i < splitTitle.length; i++) {
     if (damerauLevenshteinDistance(splitTitle[i], searchTerm) <= maxDistance) {
@@ -1093,8 +1098,7 @@ function makeLinksOpenInNewTab() {
 }
 
 function addPaddingTopToAllItems() {
-  let itemcontainer = document.getElementsByClassName("feed-grid");
-  let items = itemcontainer[0].getElementsByClassName("feed-grid__item");
+  let items = getItems();
 
   for (let i = 0; i < items.length; i++) {
     if (items[i].style.paddingTop === "10px") {
@@ -1120,35 +1124,46 @@ function websiteChange() {
 }
 
 function sortByPrice(sortOrder) {
-  let itemcontainer = document.getElementsByClassName("feed-grid");
-  let items = itemcontainer[0].getElementsByClassName("feed-grid__item");
+  let itemcontainer = getItemContainer();
+  if (itemcontainer.length === 0) {
+    console.log("No item container found, not sorting.");
+    return;
+  }
 
-  let prices = [];
+  // Read the price once per item and sort the elements themselves, so that
+  // items with identical prices keep their own position instead of the first
+  // matching element being moved repeatedly.
+  let entries = [];
+  let items = getItems();
   for (let i = 0; i < items.length; i++) {
     let price = getPriceOfItem(items[i]);
-    prices.push(price);
+    entries.push({
+      element: items[i],
+      price: price,
+      hasPrice: !isNaN(price),
+    });
   }
 
-  let sortedPrices =
-    sortOrder === "lowToHigh"
-      ? prices.sort((a, b) => a - b)
-      : prices.sort((a, b) => b - a);
+  entries.sort((a, b) => {
+    // Items without a parsable price go to the end instead of being dropped
+    if (a.hasPrice !== b.hasPrice) {
+      return a.hasPrice ? -1 : 1;
+    }
+    if (!a.hasPrice) {
+      return 0;
+    }
+    return sortOrder === "lowToHigh" ? a.price - b.price : b.price - a.price;
+  });
 
   console.log("Sorting by price: " + sortOrder);
+  console.log(entries.length + " items found");
+  console.log("Sorted prices: " + entries.map((e) => e.price));
 
-  console.log(itemcontainer[0].childNodes.length + " items found");
-
-  for (let i = 0; i < sortedPrices.length; i++) {
-    for (let j = 0; j < items.length; j++) {
-      let price = getPriceOfItem(items[j]);
-      if (price === sortedPrices[i]) {
-        itemcontainer[0].appendChild(items[j]);
-        break;
-      }
-    }
+  let fragment = document.createDocumentFragment();
+  for (let i = 0; i < entries.length; i++) {
+    fragment.appendChild(entries[i].element);
   }
-
-  console.log(itemcontainer[0].childNodes.length + " items found");
+  itemcontainer[0].appendChild(fragment);
 
   console.log("Sorting done");
 }
