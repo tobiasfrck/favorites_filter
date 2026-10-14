@@ -2,6 +2,9 @@
 
 You can easily filter your favorites on Vinted by size, availability and search term and sort by price with this browser addon.
 
+## Disclaimer: 
+This is an unofficial add-on and is not affiliated with, endorsed by, or sponsored by Vinted. It filters and sorts items already loaded in your browser. Vinted’s terms may restrict the use of third-party tools, and using this add-on may result in account restrictions. Compatibility and continued functionality are not guaranteed.
+
 ## Requirements
 
 - Firefox or Chrome
@@ -16,11 +19,6 @@ Both browsers are served from the same codebase and the same manifest.
 - Filter by price
 - Sort by price
 
-## Future features
-
-- Save and load items (basically load all favorites at once)
-- Highlight items with certain keywords/brands/sizes (maybe)
-
 ## Install
 
 **Firefox:** [Add it to Firefox](https://addons.mozilla.org/de/firefox/addon/filter-favorites/)
@@ -31,5 +29,5 @@ Both browsers are served from the same codebase and the same manifest.
 
 ![Screenshot of User Interface](Screenshot.png)
 
-## Disclaimer
+## Code-Disclaimer
 The code quality may not be the best as I this is my first browser addon and I just wanted to try some stuff.
