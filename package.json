@@ -1,0 +1,10 @@
+{
+  "name": "favorites-filter-vinted",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/extension.test.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  }
+}

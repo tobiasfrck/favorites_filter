@@ -44,6 +44,12 @@
   display: flex;
   flex-direction: column;
   border-bottom: 2px solid #f2f2f2;
+  isolation: isolate;
+}
+
+#itemCounter {
+  padding: 6px 12px;
+  font-size: 14px;
 }
 
 #statusContainer > div > input[type="checkbox"] {
@@ -124,7 +130,7 @@
   position: relative;
   height: 65px;
   padding: 0; /* Remove extra padding to align the handles with the track */
-  z-index: -1;
+  z-index: 0;
 }
 
 .price-slider input[type="range"] {
@@ -179,6 +185,7 @@
   transform: translateY(-50%);
   z-index: 1;
   border-radius: 3px; /* Make the track rounded */
+  pointer-events: none;
 }
 
 .price-slider input[type="range"]:nth-child(1) {

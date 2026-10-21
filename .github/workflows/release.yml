@@ -27,7 +27,7 @@ jobs:
       - name: Zip the extension files
         run: |
           mkdir -p dist
-          zip -r dist/extension.zip * -x ".git*" ".github*" "node_modules/*" "dist/*"
+          zip -r dist/extension.zip * -x ".git*" ".github*" "node_modules/*" "dist/*" "tests/*" "package*.json"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

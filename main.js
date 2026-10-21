@@ -4,7 +4,11 @@ if (typeof state !== "undefined") {
 var state = typeof state === "undefined" ? "off" : state;
 
 let globalFilters = [];
-let itemCount = 0;
+let specialElementContainer = null;
+let previousItems = [];
+let previousItemData = [];
+let previousItemContainer = null;
+let refreshTimer = null;
 
 // Firefox exposes the WebExtension APIs as `browser`, Chrome as `chrome`.
 let extApi = globalThis.browser ?? globalThis.chrome;
@@ -20,7 +24,7 @@ extApi.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 var itemUpdateInterval = setInterval(function () {
-  updateInternalItemCounter();
+  syncExtension();
 }, 500);
 
 function pluginButton() {
@@ -42,95 +46,61 @@ function pluginButton() {
   }
 }
 
-async function Retry(action, retryInterval = 5000, maxAttemptCount = 3) {
-  const exceptions = [];
-  for (let attempted = 0; attempted < maxAttemptCount; attempted++) {
-    try {
-      if (attempted > 0) await sleep(retryInterval);
-      return action();
-    } catch (e) {
-      exceptions.push(e);
-    }
+function syncExtension() {
+  if (!isFavoriteSite() && !isMemberSite()) {
+    specialElementContainer?.remove();
+    previousItems = [];
+    previousItemData = [];
+    previousItemContainer = null;
+    return;
   }
 
-  return exceptions;
+  const items = Array.from(getItems());
+  // Vinted also fills/reuses existing cards. Node identity alone misses prices,
+  // sizes and availability arriving after the initial render.
+  const itemData = items.map((item) => JSON.stringify([
+    getTitleOfItem(item), getDescriptionOfItem(item), getPriceOfItem(item),
+    isItemSold(item), isItemReserved(item),
+  ]));
+  const itemContainer = getItemContainer()[0] ?? null;
+  // A rerender can replace every item without changing the item count.
+  const itemsChanged =
+    itemContainer !== previousItemContainer ||
+    items.length !== previousItems.length ||
+    items.some((item, index) =>
+      item !== previousItems[index] || itemData[index] !== previousItemData[index]);
+  const controlsMissing =
+    !specialElementContainer?.isConnected ||
+    ["searchContainer", "filterContainer", "sizeContainer", "statusContainer",
+      "priceContainer", "sortContainer", "itemCounter"].some((id) =>
+      !specialElementContainer.querySelector(`#${id}`));
+
+  if (!itemsChanged && !controlsMissing) return;
+  if (!websiteChange(itemsChanged)) return;
+
+  previousItems = items;
+  previousItemData = itemData;
+  previousItemContainer = itemContainer;
+  if (itemsChanged) makeLinksOpenInNewTab();
 }
 
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-var observeDOM = (function () {
-  var MutationObserver =
-    window.MutationObserver || window.WebKitMutationObserver;
-
-  return function (obj, callback) {
-    if (!obj || obj.nodeType !== 1) return;
-
-    if (MutationObserver) {
-      // define a new observer
-      var mutationObserver = new MutationObserver(callback);
-
-      // have the observer observe for changes in children
-      mutationObserver.observe(obj, { childList: true, subtree: true });
-      return mutationObserver;
-    }
-
-    // browser support fallback
-    else if (window.addEventListener) {
-      obj.addEventListener("DOMNodeInserted", callback, false);
-      obj.addEventListener("DOMNodeRemoved", callback, false);
-    }
-  };
-})();
-
-function updateInternalItemCounter() {
-  if ((isFavoriteSite() || isMemberSite()) && getItems().length !== itemCount) {
-    itemCount = getItems().length;
-    websiteChange();
-    updateItemCounter();
-  }
-}
-
-document.addEventListener("readystatechange", function (event) {
-  if (document.URL.includes("vinted") && document.readyState === "complete") {
-    let exceptions = Retry(websiteChange, 1000, 8)
-      .then(() => console.log("websiteChange successfully"))
-      .catch((exceptions) => console.log("websiteChange failed.", exceptions));
-    if (exceptions.length > 0) {
-      console.log("Exceptions", exceptions);
-    }
-    // The grid classes are hashed CSS modules, so ".feed-grid" never matches.
-    let listElm = getItemContainer()[0];
-    observeDOM(listElm, function (m) {
-      if (document.URL.includes("catalog")) {
-        return;
-      }
-
-      // Only react to added items, not to every image swap inside the grid
-      let addedItems = m.some((record) =>
-        [...record.addedNodes].some(
-          (node) =>
-            node.nodeType === 1 && node.matches("[class*='grid__item']")
-        )
-      );
-
-      if (!addedItems) {
-        return;
-      }
-
-      websiteChange();
-      makeLinksOpenInNewTab();
-    });
-  }
+// Observe a stable ancestor: Vinted can replace both the header and the grid.
+// Batch mutations and only rebuild filters when items or their metadata change, so
+// image loading and slider interaction do not replace active input elements.
+const pageObserver = new MutationObserver((records) => {
+  // Our own control/counter updates cannot change article metadata.
+  if (records.every((record) => specialElementContainer?.contains(record.target))) return;
+  if (refreshTimer !== null) return;
+  refreshTimer = setTimeout(() => {
+    refreshTimer = null;
+    syncExtension();
+  }, 50);
 });
-
-if (isFavoriteSite() || isMemberSite()) {
-  addSpecialElementContainer();
-  addSearchBar();
-  addFilterContainer();
-  websiteChange();
-}
+pageObserver.observe(document.documentElement, {
+  childList: true, subtree: true, characterData: true, attributes: true,
+  attributeFilter: ["class", "title", "href", "data-testid"],
+});
+syncExtension();
 
 document.addEventListener("keydown", function (event) {
   if (!isVinted() || document.readyState !== "complete") {
@@ -523,10 +493,10 @@ function addPriceFilter() {
   let sliderMin = document.getElementById("slider-min");
   let sliderMax = document.getElementById("slider-max");
 
-  sliderMax.max = parseInt(getMaxPrice());
+  sliderMax.max = Math.ceil(getMaxPrice());
   sliderMin.max = sliderMax.max;
 
-  sliderMin.min = parseInt(getMinPrice());
+  sliderMin.min = Math.floor(getMinPrice());
   sliderMax.min = sliderMin.min;
 
   if (
@@ -550,6 +520,11 @@ function addPriceFilter() {
   }
 
   updateSliderTrack();
+  // A rebuild may clamp the selected range to new price bounds. Replace the
+  // active predicate as well; it must not retain values from detached inputs.
+  if (globalFilters.some((filter) => filter.name === "price")) {
+    setPriceFilter(Number(sliderMin.value), Number(sliderMax.value));
+  }
 
   const maxDistanceBetweenValues = 1;
 
@@ -573,45 +548,26 @@ function addPriceFilter() {
     updateSliderTrack();
   });
 
-  // Apply the price filter when the user lets go of the slider
-  sliderMax.addEventListener("mouseup", function () {
-    let filter = {
-      name: "price",
-      conditionType: "exclusive",
-      condition: (item) => {
-        let price = getPriceOfItem(item);
-        return (
-          price >= parseInt(sliderMin.value) &&
-          price <= parseInt(sliderMax.value)
-        );
-      },
-      action: showItem,
-    };
-
-    globalFilters = globalFilters.filter((f) => f.name !== "price");
-    globalFilters.push(filter);
-
+  const applyPriceFilter = () => {
+    setPriceFilter(Number(sliderMin.value), Number(sliderMax.value));
     applyFilters(getItems(), globalFilters, hideItem);
-  });
+  };
+  for (const slider of [sliderMin, sliderMax]) {
+    slider.addEventListener("mouseup", applyPriceFilter);
+    slider.addEventListener("change", applyPriceFilter);
+  }
+}
 
-  sliderMin.addEventListener("mouseup", function () {
-    let filter = {
-      name: "price",
-      conditionType: "exclusive",
-      condition: (item) => {
-        let price = getPriceOfItem(item);
-        return (
-          price >= parseInt(sliderMin.value) &&
-          price <= parseInt(sliderMax.value)
-        );
-      },
-      action: showItem,
-    };
-
-    globalFilters = globalFilters.filter((f) => f.name !== "price");
-    globalFilters.push(filter);
-
-    applyFilters(getItems(), globalFilters, hideItem);
+function setPriceFilter(min, max) {
+  globalFilters = globalFilters.filter((filter) => filter.name !== "price");
+  globalFilters.push({
+    name: "price",
+    conditionType: "exclusive",
+    condition: (item) => {
+      const price = getPriceOfItem(item);
+      return price >= min && price <= max;
+    },
+    action: showItem,
   });
 }
 
@@ -620,7 +576,7 @@ function updateSliderTrack() {
   let sliderMax = document.getElementById("slider-max");
   let minValueDisplay = document.getElementById("min-value");
   let maxValueDisplay = document.getElementById("max-value");
-  let sliderTrack = document.querySelector(".slider-track");
+  let sliderTrack = document.querySelector("#priceContainer .slider-track");
 
   const min = parseInt(sliderMin.value);
   const max = parseInt(sliderMax.value);
@@ -632,8 +588,9 @@ function updateSliderTrack() {
   // Update track fill
   const rangeMin = parseInt(sliderMin.min);
   const rangeMax = parseInt(sliderMin.max);
-  const leftPercent = ((min - rangeMin) / (rangeMax - rangeMin)) * 100;
-  const rightPercent = ((max - rangeMin) / (rangeMax - rangeMin)) * 100;
+  const range = rangeMax - rangeMin;
+  const leftPercent = range > 0 ? ((min - rangeMin) / range) * 100 : 0;
+  const rightPercent = range > 0 ? ((max - rangeMin) / range) * 100 : 100;
   sliderTrack.style.setProperty("--left", leftPercent + "%");
   sliderTrack.style.setProperty("--right", rightPercent + "%");
   sliderTrack.style.background = `linear-gradient(to right, rgb(221, 221, 221) ${leftPercent}%, rgb(0, 119, 130) ${leftPercent}%, rgb(175, 76, 118) ${rightPercent}%, rgb(221, 221, 221) ${rightPercent}%)`;
@@ -718,10 +675,19 @@ function getAllPossibleSizes() {
 }
 
 function addSpecialElementContainer() {
-  let itemcontainer = document.querySelectorAll(".l-header,.js-header")[0];
-  let specialContainer = document.createElement("div");
-  specialContainer.setAttribute("id", "specialContainer");
-  itemcontainer.appendChild(specialContainer);
+  if (specialElementContainer?.isConnected) return true;
+
+  const header = document.querySelector(".l-header,.js-header");
+  if (!header) return false;
+
+  if (!specialElementContainer) {
+    specialElementContainer = document.createElement("div");
+    specialElementContainer.id = "specialContainer";
+  }
+  // Keep our UI outside the header's managed children. Reattach the same DOM
+  // if an ancestor is replaced, preserving input values and event listeners.
+  header.after(specialElementContainer);
+  return true;
 }
 
 function addFilterContainer() {
@@ -781,74 +747,89 @@ function getItems() {
   if (itemcontainer.length === 0) {
     return [];
   }
-  // Only direct children: "[class*='grid__item']" alone also matches the inner
-  // "...grid__item-content" of every item, which returns each item twice.
-  let items = itemcontainer[0].querySelectorAll(":scope > [class*='grid__item']");
+  // Vinted exposes a semantic marker on the outer card. Keep a class fallback
+  // for older layouts, excluding the similarly named inner content wrapper.
+  let items = itemcontainer[0].querySelectorAll(
+    ":scope > [data-testid='grid-item'], :scope > [class*='grid__item']:not([class*='grid__item-content'])"
+  );
   return items;
 }
 function getItemContainer() {
-  let itemcontainer = document.querySelectorAll("[class*='__feed-grid--compact']");
+  // CSS-module prefixes have changed from e.g. "feed__" to "HmDNda_".
+  // Match the component suffix, without assuming the hash separator.
+  let itemcontainer = document.querySelectorAll("[class*='feed-grid--compact'], .feed-grid");
   return itemcontainer;
 }
 
 function updateItemCounter() {
+  if (!specialElementContainer?.isConnected) return;
   let items = getItems();
-  let itemCounterAtTop = document.querySelector("h1.web_ui__Text__text");
-  if (itemCounterAtTop) {
-    // only count items that are visible
-    let amount = 0;
-    let soldItems = 0;
-    let reservedItems = 0;
-    for (let i = 0; i < items.length; i++) {
-      if (items[i].style.display !== "none") {
-        amount++;
-        if (isItemSold(items[i])) {
-          soldItems++;
-        }
-        if (isItemReserved(items[i])) {
-          reservedItems++;
-        }
+  let itemCounter = document.getElementById("itemCounter");
+  if (!itemCounter) {
+    itemCounter = document.createElement("div");
+    itemCounter.id = "itemCounter";
+    itemCounter.setAttribute("role", "status");
+    specialElementContainer.appendChild(itemCounter);
+  }
+  // Only count items that are visible.
+  let amount = 0;
+  let soldItems = 0;
+  let reservedItems = 0;
+  for (let i = 0; i < items.length; i++) {
+    if (items[i].style.display !== "none") {
+      amount++;
+      if (isItemSold(items[i])) {
+        soldItems++;
+      }
+      if (isItemReserved(items[i])) {
+        reservedItems++;
       }
     }
-
-    console.log(
-      amount + " Items " + soldItems + " Sold " + reservedItems + " Reserved"
-    );
-
-    itemCounterAtTop.setAttribute("style", "margin-top: -24px !important")
-
-    itemCounterAtTop.innerText =
-      amount +
-      "/" +
-      items.length +
-      " Items (sold: " +
-      soldItems +
-      "; reserved: " +
-      reservedItems +
-      ")";
   }
+
+  console.log(
+    amount + " Items " + soldItems + " Sold " + reservedItems + " Reserved"
+  );
+
+  const counterText =
+    amount +
+    "/" +
+    items.length +
+    " Items (sold: " +
+    soldItems +
+    "; reserved: " +
+    reservedItems +
+    ")";
+  if (itemCounter.textContent !== counterText) itemCounter.textContent = counterText;
 }
 
 // Size and Condition
 function getDescriptionOfItem(item) {
-  let description = item.querySelectorAll(
+  const subtitle = item.querySelector("[data-testid$='--description-subtitle']");
+  let description = subtitle?.textContent.trim() ?? item.querySelectorAll(
     "[class*='-item-box__description'] > p"
-  )[1].innerText;
+  )[1]?.textContent.trim() ?? "";
 
   if (description.includes("·")) {
     description = description.split("·")[0].trim();
+  } else if (subtitle) {
+    // In the current layout, products without a size only show their condition.
+    return "";
   }
   return description;
 }
 
 function getTitleOfItem(item) {
-  return item.querySelectorAll(
-    "a"
-  )[0].getAttribute("title");
+  const link = item.querySelector("[data-testid$='--overlay-link']") ?? item.querySelector("a");
+  return link?.getAttribute("title") ?? link?.textContent.trim() ?? "";
 }
 
 function getPriceOfItem(item) {
-  let priceText = item.querySelector("[class*='ItemBoxPricing-']")?.innerText;
+  // Read the product price, not the separate fee-inclusive total. The old
+  // ItemBoxPricing component is absent from Vinted's current cards.
+  const priceElement = item.querySelector("[data-testid$='--price-text']") ??
+    item.querySelector("[class*='ItemBoxPricing-']");
+  let priceText = priceElement?.textContent;
   if (priceText === undefined || priceText === null) {
     return 0;
   }
@@ -862,7 +843,7 @@ function isItemSoldOrReserved(item) {
 function isItemReserved(item) {
   return (
     item.querySelector(".web_ui__Cell__amplified") !== null ||
-    item.innerText.includes("Reserviert")
+    item.textContent.includes("Reserviert")
   );
 }
 
@@ -877,7 +858,7 @@ function isItemReserved(item) {
 function isItemSold(item) {
   return (
     item.querySelector(".web_ui__Cell__success") !== null ||
-    item.innerText.includes("Verkauft")
+    item.textContent.includes("Verkauft")
   );
 }
 
@@ -923,14 +904,14 @@ function getMaxPrice() {
 
 function getMinPrice() {
   let items = getItems();
-  let minPrice = 999999;
+  let minPrice = Infinity;
   for (let i = 0; i < items.length; i++) {
     let price = getPriceOfItem(items[i]);
     if (price < minPrice) {
       minPrice = price;
     }
   }
-  return minPrice;
+  return Number.isFinite(minPrice) ? minPrice : 0;
 }
 
 function searchForTerm() {
@@ -1055,19 +1036,24 @@ function makeLinksOpenInNewTab() {
   }
 }
 
-function websiteChange() {
-  if (document.querySelector("#specialContainer") === null && (isFavoriteSite() || isMemberSite())) {
-    console.log("SpecialContainer not found");
-    addSpecialElementContainer();
-    addSearchBar();
-    addFilterContainer();
+function websiteChange(itemsChanged = true) {
+  if ((!isFavoriteSite() && !isMemberSite()) || !addSpecialElementContainer()) {
+    return false;
   }
-  addSizeFilters();
-  addStatusFilters();
-  addPriceFilter();
-  addSortByPriceButton();
-  console.log("Website changed");
-  applyFilters(getItems(), globalFilters, hideItem);
+  if (!document.getElementById("searchContainer")) addSearchBar();
+  if (!document.getElementById("filterContainer")) addFilterContainer();
+
+  if (itemsChanged || !document.getElementById("sizeContainer")) addSizeFilters();
+  if (itemsChanged || !document.getElementById("statusContainer")) addStatusFilters();
+  if (itemsChanged || !document.getElementById("priceContainer")) addPriceFilter();
+  if (itemsChanged || !document.getElementById("sortContainer")) addSortByPriceButton();
+  if (itemsChanged) {
+    console.log("Website changed");
+    applyFilters(getItems(), globalFilters, hideItem);
+  } else {
+    updateItemCounter();
+  }
+  return true;
 }
 
 function sortByPrice(sortOrder) {

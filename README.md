@@ -29,5 +29,14 @@ Both browsers are served from the same codebase and the same manifest.
 
 ![Screenshot of User Interface](Screenshot.png)
 
+## Tests
+
+Run `npm install`, then `npx playwright install chromium firefox` and `npm test`.
+The browser tests simulate page rerenders, delayed loading, navigation and slider
+interaction locally; no Vinted account is needed.
+
+Set `TEST_BROWSER=firefox` to run the same tests in Firefox. `TEST_BROWSER_PATH`
+can point to an existing browser executable (a Playwright build is required for Firefox).
+
 ## Code-Disclaimer
 The code quality may not be the best as I this is my first browser addon and I just wanted to try some stuff.
