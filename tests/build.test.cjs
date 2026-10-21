@@ -38,6 +38,8 @@ for (const browser of ["chrome", "firefox"]) {
       assert.equal(Object.hasOwn(manifest.background, "persistent"), false,
         "Firefox MV3 must omit the unsupported persistent property");
       assert.equal(manifest.browser_specific_settings.gecko.id, "vintedfavfilteraddonpublic@tobiasfrck");
+      assert.deepEqual(manifest.browser_specific_settings.gecko.data_collection_permissions,
+        { required: ["none"] }, "Declare local-only processing for Firefox's data consent system");
     }
   });
 
