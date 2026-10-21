@@ -2,7 +2,9 @@
   "name": "favorites-filter-vinted",
   "private": true,
   "scripts": {
-    "test": "node --test tests/extension.test.cjs"
+    "build": "node scripts/build.mjs",
+    "test": "node --test tests/build.test.cjs tests/extension.test.cjs",
+    "test:build": "node --test tests/build.test.cjs"
   },
   "devDependencies": {
     "playwright": "1.62.1"

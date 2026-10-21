@@ -1,4 +1,4 @@
-name: Chrome Extension Release
+name: Browser Extension Release
 
 on:
   workflow_dispatch:  # Allows manual triggering of the workflow from GitHub Actions UI
@@ -16,23 +16,40 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        id: checkout
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.event.inputs.branch }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
 
       - name: Read version from manifest
         id: manifest
         run: echo "version=$(jq -r .version manifest.json)" >> "$GITHUB_OUTPUT"
 
-      - name: Zip the extension files
-        run: |
-          mkdir -p dist
-          zip -r dist/extension.zip * -x ".git*" ".github*" "node_modules/*" "dist/*" "tests/*" "package*.json"
+      - name: Build and validate browser packages
+        run: npm run test:build
+
+      - name: Zip Chrome extension
+        working-directory: dist/chrome
+        run: zip -r ../extension.zip .
+
+      - name: Zip Firefox extension
+        working-directory: dist/firefox
+        run: zip -r ../extension-firefox.zip .
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
-          files: dist/extension.zip
+          files: |
+            dist/extension.zip
+            dist/extension-firefox.zip
+          fail_on_unmatched_files: true
           tag_name: v${{ steps.manifest.outputs.version }}
+          target_commitish: ${{ steps.checkout.outputs.commit }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

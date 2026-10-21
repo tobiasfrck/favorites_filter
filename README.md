@@ -9,7 +9,10 @@ This is an unofficial add-on and is not affiliated with, endorsed by, or sponsor
 
 - Firefox or Chrome
 
-Both browsers are served from the same codebase and the same manifest.
+Both browsers share the same JavaScript and styles. The build creates a separate
+manifest for each browser: Chrome uses a background service worker, Firefox uses
+a background script that is non-persistent by default in Manifest V3. The Firefox
+manifest omits the unsupported `persistent` property.
 
 ## Features
 
@@ -25,6 +28,25 @@ Both browsers are served from the same codebase and the same manifest.
 
 **Chrome:** not on the Chrome Web Store due to the registration fee. Download `extension.zip` from the [releases](https://github.com/tobiasfrck/favorites_filter/releases), unpack it, then load the folder via `chrome://extensions` with developer mode enabled.
 
+## Build and development
+
+Run `npm run build` with Node.js 22 or newer. The build needs no npm dependencies
+and creates two directories containing only the extension's runtime files:
+
+- `dist/chrome`: load this directory via `chrome://extensions`. The project root
+  also remains directly loadable in Chrome.
+- `dist/firefox`: open `about:debugging#/runtime/this-firefox`, choose
+  **Load Temporary Add-on**, then select this directory's `manifest.json`.
+
+The root `manifest.json` is the common base and the Chrome manifest.
+`manifests/firefox.json` overrides only the background configuration and adds the
+existing Firefox add-on ID. Edit the shared source files, then rebuild; do not
+edit the generated copies in `dist`.
+
+The release workflow builds and validates both packages. `extension.zip` remains
+the Chrome download; `extension-firefox.zip` is the Firefox package for AMO
+submission. Regular Firefox installations continue to use the signed AMO version.
+
 ## Screenshots
 
 ![Screenshot of User Interface](Screenshot.png)
@@ -34,6 +56,9 @@ Both browsers are served from the same codebase and the same manifest.
 Run `npm install`, then `npx playwright install chromium firefox` and `npm test`.
 The browser tests simulate page rerenders, delayed loading, navigation and slider
 interaction locally; no Vinted account is needed.
+
+`npm run test:build` checks the generated manifests, packaged files and toolbar
+message handling for both browser APIs. It needs no npm dependencies.
 
 Set `TEST_BROWSER=firefox` to run the same tests in Firefox. `TEST_BROWSER_PATH`
 can point to an existing browser executable (a Playwright build is required for Firefox).
