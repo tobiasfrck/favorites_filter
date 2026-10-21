@@ -26,7 +26,7 @@ manifest omits the unsupported `persistent` property.
 
 **Firefox:** [Add it to Firefox](https://addons.mozilla.org/de/firefox/addon/filter-favorites/)
 
-**Chrome:** not on the Chrome Web Store due to the registration fee. Download `extension.zip` from the [releases](https://github.com/tobiasfrck/favorites_filter/releases), unpack it, then load the folder via `chrome://extensions` with developer mode enabled.
+**Chrome:** not on the Chrome Web Store due to the registration fee. Download `favorites_filter-chrome.zip` from the [releases](https://github.com/tobiasfrck/favorites_filter/releases), unpack it, then load the folder via `chrome://extensions` with developer mode enabled.
 
 ## Build and development
 
@@ -43,8 +43,8 @@ The root `manifest.json` is the common base and the Chrome manifest.
 existing Firefox add-on ID. Edit the shared source files, then rebuild; do not
 edit the generated copies in `dist`.
 
-The release workflow builds and validates both packages. `extension.zip` remains
-the Chrome download; `extension-firefox.zip` is the Firefox package for AMO
+The release workflow builds and validates both packages. `favorites_filter-chrome.zip` is
+the Chrome download; `favorites_filter-firefox.zip` is the Firefox package for AMO
 submission. Regular Firefox installations continue to use the signed AMO version.
 
 ## Screenshots

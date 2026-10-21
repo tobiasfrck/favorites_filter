@@ -36,18 +36,18 @@ jobs:
 
       - name: Zip Chrome extension
         working-directory: dist/chrome
-        run: zip -r ../extension.zip .
+        run: zip -r ../favorites_filter-chrome.zip .
 
       - name: Zip Firefox extension
         working-directory: dist/firefox
-        run: zip -r ../extension-firefox.zip .
+        run: zip -r ../favorites_filter-firefox.zip .
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
         with:
           files: |
-            dist/extension.zip
-            dist/extension-firefox.zip
+            dist/favorites_filter-chrome.zip
+            dist/favorites_filter-firefox.zip
           fail_on_unmatched_files: true
           tag_name: v${{ steps.manifest.outputs.version }}
           target_commitish: ${{ steps.checkout.outputs.commit }}
