@@ -773,17 +773,25 @@ function updateItemCounter() {
   }
   // Only count items that are visible.
   let amount = 0;
+  let totalVisibleCost = 0;
+  let totalCost = 0;
+  let currency = "";
   let soldItems = 0;
   let reservedItems = 0;
   for (let i = 0; i < items.length; i++) {
     if (items[i].style.display !== "none") {
       amount++;
+      totalVisibleCost += getPriceOfItem(items[i]);
       if (isItemSold(items[i])) {
         soldItems++;
       }
       if (isItemReserved(items[i])) {
         reservedItems++;
       }
+    }
+    totalCost += getPriceOfItem(items[i]);
+    if (currency === "") {
+      currency = getPriceCurrencyOfItem(items[i]);
     }
   }
 
@@ -795,11 +803,19 @@ function updateItemCounter() {
     amount +
     "/" +
     items.length +
-    " Items (sold: " +
+    " items (sold: " +
     soldItems +
     "; reserved: " +
     reservedItems +
-    ")";
+    ")"+
+    " | visible cost: " +
+    totalVisibleCost.toFixed(2) +
+    " " +
+    currency +
+    " | total cost: " +
+    totalCost.toFixed(2) +
+    " " +
+    currency;
   if (itemCounter.textContent !== counterText) itemCounter.textContent = counterText;
 }
 
@@ -834,6 +850,16 @@ function getPriceOfItem(item) {
     return 0;
   }
   return parseFloat(priceText.replace(/[^0-9.,]/g, "").replace(",", ".")); // remove all non-numeric characters and replace comma with dot
+}
+
+function getPriceCurrencyOfItem(item) {
+  const priceElement = item.querySelector("[data-testid$='--price-text']") ??
+    item.querySelector("[class*='ItemBoxPricing-']");
+  let priceText = priceElement?.textContent;
+  if (priceText === undefined || priceText === null) {
+    return "";
+  }
+  return priceText.replace(/[0-9.,]/g, "").trim(); // remove all numeric characters and return the rest
 }
 
 function isItemSoldOrReserved(item) {
